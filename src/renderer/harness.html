@@ -1,0 +1,149 @@
+<!doctype html>
+<!-- Dev-only harness: loads the renderer in a plain browser with a mocked
+     window.readex bridge so auto-scroll behaviour can be inspected without
+     Electron. Not part of the production build. -->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Readex harness</title>
+    <script>
+      window.addEventListener('error', (event) => {
+        document.title = 'ERR: ' + (event.message || 'unknown').slice(0, 120)
+      })
+      window.addEventListener('unhandledrejection', (event) => {
+        document.title = 'REJ: ' + String(event.reason?.message || event.reason).slice(0, 120)
+      })
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      ;(function () {
+        const reader = {
+          theme: 'light',
+          backgroundColor: '#f7f4ef',
+          textColor: '#37312a',
+          accentColor: '#b95c33',
+          fontFamily:
+            '"Segoe UI Variable Text", "Microsoft YaHei UI", "PingFang SC", sans-serif',
+          fontSize: 17,
+          lineHeight: 1.9,
+          paragraphSpacing: 0.8,
+          letterSpacing: 0,
+          contentWidth: 820,
+          floatingReaderWidth: 820,
+          floatingReaderHeight: 200,
+          pdfScale: 1,
+          wheelScrollStep: 48,
+          smoothScrolling: true,
+          autoScrollSpeed: 25,
+          autoScrollColor: '#b7e4c7',
+          autoScrollHighlight: true,
+          autoScrollHighlightStyle: 'band',
+          ttsVoice: 'zh-CN-XiaoxiaoNeural',
+          ttsRate: 1,
+          ttsVolume: 1
+        }
+        const book = {
+          id: 'demo',
+          format: 'txt',
+          title: '连续滚动测试',
+          author: 'harness',
+          fileName: 'demo.txt',
+          originalPath: 'demo.txt',
+          importedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          size: 1,
+          sha256: 'demo',
+          progress: 0.02
+        }
+        const chapterText = (chapter) =>
+          Array.from(
+            { length: 16 },
+            (_, p) =>
+              `<p>第${chapter}章第${p + 1}段。自动滚动应当匀速前进，色带随内容平滑移动，句与句之间前后渐变衔接。这是用于验证连续滚动效果的示例句子，每一句都会被平滑地标注，然后柔和地淡出。</p>`
+          ).join('')
+        const chapters = [1, 2, 3].map((chapter) => ({
+          id: `ch${chapter}`,
+          label: `第${chapter}章`,
+          html: `<h1>第${chapter}章</h1>${chapterText(chapter)}`,
+          text: `第${chapter}章 ${chapterText(chapter)}`
+        }))
+        const bookContent = {
+          format: 'txt',
+          toc: chapters.map((chapter) => ({
+            id: chapter.id,
+            label: chapter.label,
+            chapterId: chapter.id
+          })),
+          chapters
+        }
+        const appSettings = {
+          schemaVersion: 1,
+          reader,
+          workspaces: [{ bookId: 'demo', openedAt: new Date().toISOString() }],
+          activeBookId: 'demo'
+        }
+        const noop = () => {}
+        window.readex = {
+          settings: {
+            get: () => Promise.resolve(appSettings),
+            update: () => Promise.resolve(true)
+          },
+          library: {
+            list: () => Promise.resolve({ schemaVersion: 1, books: [book] }),
+            chooseAndImport: () => Promise.resolve(null),
+            importPaths: () => Promise.resolve({ jobs: [], books: [] }),
+            remove: () => Promise.resolve(),
+            reveal: () => Promise.resolve()
+          },
+          system: {
+            getVersion: () => Promise.resolve('0.1.0-harness'),
+            getPathForFile: () => ''
+          },
+          book: {
+            getResourceUrl: () =>
+              '/@fs/D:/PyProject/Haoxiaoyao/Readex/data-dev/harness-mini.epub',
+            getContent: () => Promise.resolve(bookContent),
+            getRecord: () => Promise.resolve(book)
+          },
+          reading: {
+            getState: () => Promise.resolve(null),
+            saveState: () => Promise.resolve(true)
+          },
+          annotations: {
+            list: () => Promise.resolve([]),
+            listAll: () => Promise.resolve([]),
+            save: (annotation) => Promise.resolve([annotation]),
+            remove: () => Promise.resolve([]),
+            exportMarkdown: () => Promise.resolve(true)
+          },
+          windowControl: {
+            minimize: () => Promise.resolve(),
+            maximize: () => Promise.resolve(),
+            close: () => Promise.resolve(),
+            quit: () => Promise.resolve(),
+            openFloatingReader: () => Promise.resolve(true),
+            minimizeFloatingReader: () => Promise.resolve(),
+            closeFloatingReader: () => Promise.resolve(),
+            state: () => Promise.resolve({ maximized: false, fullscreen: false }),
+            setFullScreen: () => Promise.resolve(),
+            setTitleBarTheme: () => Promise.resolve(),
+            onStateChange: () => () => {},
+            onFloatingReaderRestored: () => () => {},
+            onFloatingReaderSync: () => () => {}
+          },
+          profile: { open: () => Promise.resolve() },
+          search: { inBook: () => Promise.resolve([]) },
+          speech: {
+            synthesize: () =>
+              Promise.resolve({ audio: new Uint8Array(), cues: [], cached: false })
+          },
+          import: { onProgress: () => () => {} }
+        }
+      })()
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

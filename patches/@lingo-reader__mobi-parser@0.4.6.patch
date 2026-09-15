@@ -1,0 +1,148 @@
+diff --git a/dist/index.browser.js b/dist/index.browser.js
+index 98779ed009c1e482d6722d111f13a41f21a24da3..7466fb1f650d3e791523823cdea06465a0fe41a7 100644
+--- a/dist/index.browser.js
++++ b/dist/index.browser.js
+@@ -1081,18 +1081,28 @@ class Kf8 {
+   }
+   replace(str) {
+     const cssUrls = [];
+-    const head = str.match(/<head[^>]*>([\s\S]*)<\/head>/i)[1];
++    const headMatch = str.match(/<head[^>]*>([\s\S]*)<\/head>/i);
++    if (!headMatch) {
++      return { html: str, css: cssUrls };
++    }
++    const head = headMatch[1];
+     const links = head.match(/<link[^>]*>/gi) ?? [];
+     for (const link of links) {
+-      const linkHref = link.match(/href="([^"]*)"/i)[1];
+-      const id = link.match(kindleResourceRegex)[2];
++      const hrefMatch = link.match(/href="([^"]*)"/i);
++      const resourceMatch = link.match(kindleResourceRegex);
++      if (!hrefMatch || !resourceMatch) {
++        continue;
++      }
++      const linkHref = hrefMatch[1];
++      const id = resourceMatch[2];
+       const href = this.replaceResources(linkHref);
+       cssUrls.push({
+         id,
+         href
+       });
+     }
+-    const body = str.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
++    const bodyMatch = str.match(/<body[^>]*>([\s\S]*)<\/body>/i);
++    const body = bodyMatch ? bodyMatch[1] : str;
+     const bodyReplaced = this.replaceResources(body);
+     return {
+       html: bodyReplaced,
+diff --git a/dist/index.browser.mjs b/dist/index.browser.mjs
+index 38393700c13ab99a99a0d5b9c5203ec943c293c5..0d452a41dc416a8cd38f54257ddca669a72319f1 100644
+--- a/dist/index.browser.mjs
++++ b/dist/index.browser.mjs
+@@ -1079,18 +1079,28 @@ class Kf8 {
+   }
+   replace(str) {
+     const cssUrls = [];
+-    const head = str.match(/<head[^>]*>([\s\S]*)<\/head>/i)[1];
++    const headMatch = str.match(/<head[^>]*>([\s\S]*)<\/head>/i);
++    if (!headMatch) {
++      return { html: str, css: cssUrls };
++    }
++    const head = headMatch[1];
+     const links = head.match(/<link[^>]*>/gi) ?? [];
+     for (const link of links) {
+-      const linkHref = link.match(/href="([^"]*)"/i)[1];
+-      const id = link.match(kindleResourceRegex)[2];
++      const hrefMatch = link.match(/href="([^"]*)"/i);
++      const resourceMatch = link.match(kindleResourceRegex);
++      if (!hrefMatch || !resourceMatch) {
++        continue;
++      }
++      const linkHref = hrefMatch[1];
++      const id = resourceMatch[2];
+       const href = this.replaceResources(linkHref);
+       cssUrls.push({
+         id,
+         href
+       });
+     }
+-    const body = str.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
++    const bodyMatch = str.match(/<body[^>]*>([\s\S]*)<\/body>/i);
++    const body = bodyMatch ? bodyMatch[1] : str;
+     const bodyReplaced = this.replaceResources(body);
+     return {
+       html: bodyReplaced,
+diff --git a/dist/index.node.js b/dist/index.node.js
+index 9d9bb0fd9a04b0d3b0dd31785ab41c31d7745e0f..57e474159aa8682be6a0cb8b35286d62ae8911d0 100644
+--- a/dist/index.node.js
++++ b/dist/index.node.js
+@@ -1121,18 +1121,28 @@ class Kf8 {
+   }
+   replace(str) {
+     const cssUrls = [];
+-    const head = str.match(/<head[^>]*>([\s\S]*)<\/head>/i)[1];
++    const headMatch = str.match(/<head[^>]*>([\s\S]*)<\/head>/i);
++    if (!headMatch) {
++      return { html: str, css: cssUrls };
++    }
++    const head = headMatch[1];
+     const links = head.match(/<link[^>]*>/gi) ?? [];
+     for (const link of links) {
+-      const linkHref = link.match(/href="([^"]*)"/i)[1];
+-      const id = link.match(kindleResourceRegex)[2];
++      const hrefMatch = link.match(/href="([^"]*)"/i);
++      const resourceMatch = link.match(kindleResourceRegex);
++      if (!hrefMatch || !resourceMatch) {
++        continue;
++      }
++      const linkHref = hrefMatch[1];
++      const id = resourceMatch[2];
+       const href = this.replaceResources(linkHref);
+       cssUrls.push({
+         id,
+         href
+       });
+     }
+-    const body = str.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
++    const bodyMatch = str.match(/<body[^>]*>([\s\S]*)<\/body>/i);
++    const body = bodyMatch ? bodyMatch[1] : str;
+     const bodyReplaced = this.replaceResources(body);
+     return {
+       html: bodyReplaced,
+diff --git a/dist/index.node.mjs b/dist/index.node.mjs
+index ea2a772bbd5d00eabea557ab159313982ba05ef0..cb5cbd2e0777018df1286e55dcc5404d7c5cf5ba 100644
+--- a/dist/index.node.mjs
++++ b/dist/index.node.mjs
+@@ -1119,18 +1119,28 @@ class Kf8 {
+   }
+   replace(str) {
+     const cssUrls = [];
+-    const head = str.match(/<head[^>]*>([\s\S]*)<\/head>/i)[1];
++    const headMatch = str.match(/<head[^>]*>([\s\S]*)<\/head>/i);
++    if (!headMatch) {
++      return { html: str, css: cssUrls };
++    }
++    const head = headMatch[1];
+     const links = head.match(/<link[^>]*>/gi) ?? [];
+     for (const link of links) {
+-      const linkHref = link.match(/href="([^"]*)"/i)[1];
+-      const id = link.match(kindleResourceRegex)[2];
++      const hrefMatch = link.match(/href="([^"]*)"/i);
++      const resourceMatch = link.match(kindleResourceRegex);
++      if (!hrefMatch || !resourceMatch) {
++        continue;
++      }
++      const linkHref = hrefMatch[1];
++      const id = resourceMatch[2];
+       const href = this.replaceResources(linkHref);
+       cssUrls.push({
+         id,
+         href
+       });
+     }
+-    const body = str.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
++    const bodyMatch = str.match(/<body[^>]*>([\s\S]*)<\/body>/i);
++    const body = bodyMatch ? bodyMatch[1] : str;
+     const bodyReplaced = this.replaceResources(body);
+     return {
+       html: bodyReplaced,

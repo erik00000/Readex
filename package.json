@@ -1,0 +1,104 @@
+{
+  "name": "readex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Readex - a private, portable desktop ebook reader",
+  "main": "./out/main/index.js",
+  "author": "Readex",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dist": "npm run build && electron-builder --win portable",
+    "dist:green": "npm run build && electron-builder --win zip",
+    "dist:dir": "npm run build && electron-builder --win dir",
+    "dist:signed": "npm run typecheck && node scripts/verify-signing-env.mjs && electron-vite build && electron-builder --win portable zip"
+  },
+  "dependencies": {
+    "@lingo-reader/mobi-parser": "^0.4.6",
+    "archiver": "^7.0.1",
+    "chardet": "^2.1.0",
+    "fast-xml-parser": "^5.2.5",
+    "iconv-lite": "^0.6.3",
+    "jszip": "^3.10.1",
+    "node-edge-tts": "1.2.10"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.3",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "dompurify": "^3.2.6",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "epubjs": "^0.3.93",
+    "jsdom": "^26.1.0",
+    "lucide-react": "^0.468.0",
+    "pdfjs-dist": "^4.10.38",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.1.0",
+    "vitest": "^3.1.1"
+  },
+  "build": {
+    "appId": "com.readex.reader",
+    "productName": "Readex",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "!node_modules/**/pdfjs-dist/**/*.map",
+      "!node_modules/**/pdfjs-dist/**/*.mjs",
+      "!node_modules/**/pdfjs-dist/**/*.js",
+      "!node_modules/**/pdfjs-dist/**/*.cjs",
+      "!node_modules/**/pdfjs-dist/**/web/**",
+      "!node_modules/**/pdfjs-dist/**/types/**",
+      "!node_modules/**/@napi-rs/**",
+      "!node_modules/**/canvas/**"
+    ],
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE"
+      },
+      {
+        "from": "src/renderer/src/assets/fonts/licenses",
+        "to": "font-licenses"
+      }
+    ],
+    "win": {
+      "icon": "build/readex.ico",
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
+        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+      },
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Readex-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Readex-${version}-portable.${ext}"
+    }
+  }
+}

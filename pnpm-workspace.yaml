@@ -1,0 +1,14 @@
+allowBuilds:
+  core-js: true
+  electron: true
+  electron-winstaller: true
+  es5-ext: true
+  esbuild: true
+onlyBuiltDependencies:
+  - core-js
+  - electron
+  - electron-winstaller
+  - es5-ext
+  - esbuild
+patchedDependencies:
+  '@lingo-reader/mobi-parser@0.4.6': patches/@lingo-reader__mobi-parser@0.4.6.patch

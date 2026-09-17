@@ -5,6 +5,7 @@ dist/
 data/
 data-dev/
 coverage/
+.playwright-cli/
 *.log
 *.tsbuildinfo
 .DS_Store

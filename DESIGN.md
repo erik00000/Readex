@@ -277,7 +277,7 @@ Readex/
           PdfReader.tsx
           TextFlowReader.tsx
         lib/
-          theme.ts            应用主题变量推导
+          theme.ts            应用主题变量推导（复用 shared/theme.ts 的调色计算）
           toc.ts              目录查找和章节进度
           textAnchors.ts      文本定位和高亮
           smoothScroll.ts     精细平滑滚动
@@ -287,6 +287,7 @@ Readex/
           format.ts           显示格式工具
     shared/
       types.ts                共享类型、默认设置、主题预设
+      theme.ts                颜色计算、标题栏主题和原生标题栏高度
       bookResource.ts         图书资源 URL 工具
       speech.ts               听书音色、参数和返回类型
       global.d.ts             window.readex 类型
@@ -1048,6 +1049,14 @@ PDF 元数据标题按原始字节解析：
 - 滚动条
 - 封面占位色
 
+调色板以 Codex 桌面客户端的界面取色为参照：亮色主题使用纯白内容和近黑文字，
+深色主题使用中性灰黑，护眼主题保留暖色纸感。三个内置预设因此都不带暖棕色调，
+所有面板、悬浮面板、边框和阴影都由同一套混色规则推导，颜色变化不会残留旧色块。
+
+预设色值集中在 `THEME_PRESETS`，应用在启动和切换主题时把整套变量写入
+`.app-shell` 的行内样式；主进程创建窗口时用同一个 `createTitleBarTheme()` 计算
+窗口底色和原生窗口按钮颜色，避免亮色主题在启动瞬间闪出深色底。
+
 ### 17.2 明暗判断
 
 通过背景色相对亮度判断亮色或暗色模式，并设置：
@@ -1056,6 +1065,10 @@ PDF 元数据标题按原始字节解析：
 light -> color-scheme: light
 dark  -> color-scheme: dark
 ```
+
+强调色的对比文字由强调色自身亮度决定（`readableOn()`），而不是由明暗主题决定：
+Codex 风格亮色主题的强调色是近黑色，深色主题的强调色是近白色，两者都需要相反
+的按钮文字。
 
 ### 17.3 原生标题栏主题
 
@@ -1086,6 +1099,19 @@ mainWindow.setTitleBarOverlay({ color, symbolColor, height: 54 })
 - 许可证原文通过 electron-builder `extraResources` 复制到 `resources/font-licenses`。
 - `FONT-CREDITS.md` 记录来源、上游仓库、版权归属和许可证。
 - OFL 允许随应用免费使用和分发，但不得单独售卖字体文件。
+
+### 17.5 历史配色迁移
+
+`LEGACY_THEME_PRESETS` 保存历次预设配色，最新的在前。加载设置时
+`upgradeLegacyThemeColors()` 会逐代比对：只要背景、文字和强调色三者都与某个历史
+预设完全一致，就整体替换为当前预设；任何自选配色都不会被改写。
+
+新增一代配色时：
+
+- 把被替换的配色整组挪进 `LEGACY_THEME_PRESETS` 的队首，不要删除旧记录。
+- 同步更新 `DEFAULT_READER_SETTINGS` 的默认深色值，避免全新配置停留在旧色。
+- 同步更新 `styles.css` 里 `:root` 的兜底变量和 `.theme-dark` / `.theme-light`
+  预览色块。
 
 ---
 

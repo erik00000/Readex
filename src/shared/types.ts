@@ -210,9 +210,9 @@ export interface FloatingReaderSync {
 
 export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   theme: 'dark',
-  backgroundColor: '#171717',
-  textColor: '#e8e8e8',
-  accentColor: '#60a5fa',
+  backgroundColor: '#212121',
+  textColor: '#ececec',
+  accentColor: '#f5f5f5',
   fontFamily: '"Segoe UI Variable Text", "Microsoft YaHei UI", "PingFang SC", sans-serif',
   fontSize: 17,
   lineHeight: 1.78,
@@ -240,19 +240,21 @@ export const DEFAULT_SETTINGS: AppSettings = {
   activeBookId: null
 }
 
-export const THEME_PRESETS: Record<
-  Exclude<ThemeMode, 'custom'>,
-  Pick<ReaderSettings, 'backgroundColor' | 'textColor' | 'accentColor'>
-> = {
+type ThemePalette = Pick<
+  ReaderSettings,
+  'backgroundColor' | 'textColor' | 'accentColor'
+>
+
+export const THEME_PRESETS: Record<Exclude<ThemeMode, 'custom'>, ThemePalette> = {
   dark: {
-    backgroundColor: '#1c1a18',
-    textColor: '#eae6e0',
-    accentColor: '#e08a5a'
+    backgroundColor: '#212121',
+    textColor: '#ececec',
+    accentColor: '#f5f5f5'
   },
   light: {
-    backgroundColor: '#f7f4ef',
-    textColor: '#37312a',
-    accentColor: '#b95c33'
+    backgroundColor: '#ffffff',
+    textColor: '#0d0d0d',
+    accentColor: '#0d0d0d'
   },
   sepia: {
     backgroundColor: '#f3ead8',
@@ -262,43 +264,65 @@ export const THEME_PRESETS: Record<
 }
 
 /**
- * Pre-refresh preset values. Profiles saved with these exact colors are
- * silently upgraded to the current palette so the app picks up the warmer
- * Codex-style theme without touching genuinely custom colors.
+ * Historical preset generations, newest first. A profile that still carries one
+ * of these exact palettes is silently upgraded to the current Codex-style colors,
+ * so older installs pick up the refreshed shell without touching genuinely custom
+ * colors.
  */
-export const LEGACY_THEME_PRESETS: Record<
+export const LEGACY_THEME_PRESETS: readonly Record<
   Exclude<ThemeMode, 'custom'>,
-  Pick<ReaderSettings, 'backgroundColor' | 'textColor' | 'accentColor'>
-> = {
-  dark: {
-    backgroundColor: '#171717',
-    textColor: '#e8e8e8',
-    accentColor: '#60a5fa'
+  ThemePalette
+>[] = [
+  {
+    // First public release: warm shell.
+    dark: {
+      backgroundColor: '#1c1a18',
+      textColor: '#eae6e0',
+      accentColor: '#e08a5a'
+    },
+    light: {
+      backgroundColor: '#f7f4ef',
+      textColor: '#37312a',
+      accentColor: '#b95c33'
+    },
+    sepia: {
+      backgroundColor: '#f3ead8',
+      textColor: '#3e3427',
+      accentColor: '#9a5b2d'
+    }
   },
-  light: {
-    backgroundColor: '#ffffff',
-    textColor: '#242424',
-    accentColor: '#2563eb'
-  },
-  sepia: {
-    backgroundColor: '#f3ead8',
-    textColor: '#3e3427',
-    accentColor: '#9a5b2d'
+  {
+    // Pre-refresh default: neutral gray shell with a blue accent.
+    dark: {
+      backgroundColor: '#171717',
+      textColor: '#e8e8e8',
+      accentColor: '#60a5fa'
+    },
+    light: {
+      backgroundColor: '#ffffff',
+      textColor: '#242424',
+      accentColor: '#2563eb'
+    },
+    sepia: {
+      backgroundColor: '#f3ead8',
+      textColor: '#3e3427',
+      accentColor: '#9a5b2d'
+    }
   }
-}
+]
 
 export function upgradeLegacyThemeColors(
   reader: ReaderSettings
 ): ReaderSettings {
   const theme = reader.theme
   if (theme === 'custom') return reader
-  const legacy = LEGACY_THEME_PRESETS[theme]
-  const matches =
-    legacy &&
-    reader.backgroundColor === legacy.backgroundColor &&
-    reader.textColor === legacy.textColor &&
-    reader.accentColor === legacy.accentColor
-  return matches ? { ...reader, ...THEME_PRESETS[theme] } : reader
+  const matchesLegacy = LEGACY_THEME_PRESETS.some(
+    (generation) =>
+      reader.backgroundColor === generation[theme].backgroundColor &&
+      reader.textColor === generation[theme].textColor &&
+      reader.accentColor === generation[theme].accentColor
+  )
+  return matchesLegacy ? { ...reader, ...THEME_PRESETS[theme] } : reader
 }
 
 export const ANNOTATION_COLORS: Record<AnnotationColor, string> = {

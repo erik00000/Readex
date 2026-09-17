@@ -20,6 +20,8 @@ import type {
   ReadingLocator,
   SearchResult
 } from '../shared/types'
+import { upgradeLegacyThemeColors } from '../shared/types'
+import { createTitleBarTheme, TITLE_BAR_HEIGHT } from '../shared/theme'
 import type { TtsSynthesisRequest } from '../shared/speech'
 import { AnnotationIndex } from './annotationIndex'
 import { registerBookProtocol, registerBookScheme } from './bookProtocol'
@@ -158,7 +160,12 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
-function createWindow(): void {
+async function createWindow(): Promise<void> {
+  // Paint the window and its native controls with the saved theme colors from the
+  // first frame, so a light theme never flashes the dark fallback.
+  const reader = upgradeLegacyThemeColors((await storage.getSettings()).reader)
+  const titleBarTheme = createTitleBarTheme(reader)
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -167,9 +174,9 @@ function createWindow(): void {
     show: true,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#151515',
-      symbolColor: '#b8b8b4',
-      height: 54
+      color: titleBarTheme.color,
+      symbolColor: titleBarTheme.symbolColor,
+      height: TITLE_BAR_HEIGHT
     },
     resizable: true,
     maximizable: true,
@@ -177,7 +184,7 @@ function createWindow(): void {
     thickFrame: true,
     hasShadow: true,
     icon: app.isPackaged ? undefined : path.join(process.cwd(), 'build/readex.png'),
-    backgroundColor: '#141414',
+    backgroundColor: reader.backgroundColor,
     title: 'Readex',
     webPreferences: {
       preload: path.join(currentDirectory, '../preload/index.cjs'),
@@ -211,7 +218,11 @@ async function openFloatingReader(
 ): Promise<boolean> {
   if (!mainWindow || mainWindow.isDestroyed()) return false
 
-  const settings = await storage.getSettings()
+  const stored = await storage.getSettings()
+  const settings: AppSettings = {
+    ...stored,
+    reader: upgradeLegacyThemeColors(stored.reader)
+  }
   if (floatingWindow && !floatingWindow.isDestroyed()) {
     if (floatingBookId === bookId) {
       const sync: FloatingReaderSync = { settings, locator }
@@ -575,14 +586,14 @@ app.whenReady().then(async () => {
     })
   }
 
-  createWindow()
+  await createWindow()
   setTimeout(() => {
     void annotationIndex.warm().catch(() => {
       // The index rebuilds lazily if a background warm-up fails.
     })
   }, 2_000)
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) void createWindow()
   })
 })
 

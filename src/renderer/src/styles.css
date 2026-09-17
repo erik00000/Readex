@@ -1,21 +1,24 @@
+/* Fallback palette for the default dark theme, used for the first paint before
+   React injects the derived variables from createAppThemeStyle(). Keep it in sync
+   with THEME_PRESETS.dark in src/shared/types.ts. */
 :root {
   color-scheme: dark;
   font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --bg: #101010;
-  --surface: #171717;
-  --surface-2: #1d1d1d;
-  --surface-3: #242424;
-  --surface-hover: #292929;
-  --border: #2d2d2d;
-  --border-soft: #242424;
-  --text: #eeeeec;
-  --text-soft: #b7b7b3;
-  --text-muted: #7e7e79;
-  --accent: #6f9ed8;
-  --accent-strong: #82b3ef;
-  --accent-soft: rgba(111, 158, 216, 0.14);
+  --bg: #212121;
+  --surface: #282828;
+  --surface-2: #2f2f2f;
+  --surface-3: #353535;
+  --surface-hover: #3b3b3b;
+  --border: #3d3d3d;
+  --border-soft: #313131;
+  --text: #ececec;
+  --text-soft: #c3c3c3;
+  --text-muted: #919191;
+  --accent: #f5f5f5;
+  --accent-strong: #f3f3f3;
+  --accent-soft: rgba(245, 245, 245, 0.16);
   --danger: #e16b6b;
   --danger-soft: rgba(225, 107, 107, 0.12);
   --warning: #d9a85e;
@@ -2431,13 +2434,13 @@ button:disabled {
 }
 
 .theme-dark .theme-preview {
-  color: #e7e7e3;
-  background: #171717;
+  color: #ececec;
+  background: #212121;
 }
 
 .theme-light .theme-preview {
-  color: #242424;
-  background: #fff;
+  color: #0d0d0d;
+  background: #ffffff;
 }
 
 .theme-sepia .theme-preview {

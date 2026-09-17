@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Minus, X } from 'lucide-react'
 import type { AppSettings, BookRecord, ReadingLocator } from '@shared/types'
-import { DEFAULT_SETTINGS } from '@shared/types'
+import { DEFAULT_SETTINGS, upgradeLegacyThemeColors } from '@shared/types'
 import { useFloatingWindowDrag } from './lib/floatingDrag'
 import { createAppThemeStyle } from './lib/theme'
 
@@ -35,7 +35,10 @@ export function FloatingApp(): React.JSX.Element {
         return
       }
       setBook(record)
-      setSettings(storedSettings)
+      setSettings({
+        ...storedSettings,
+        reader: upgradeLegacyThemeColors(storedSettings.reader)
+      })
       setLocator(readingState?.locator ?? record.lastLocation ?? null)
     })
     return () => {

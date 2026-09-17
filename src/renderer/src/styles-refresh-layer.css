@@ -223,7 +223,12 @@
 }
 
 .titlebar-progress-track span {
-  background: linear-gradient(90deg, #4f8df9 0%, #7a7af5 55%, #35c98e 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 72%, var(--bg)) 0%,
+    var(--accent) 60%,
+    var(--accent-strong) 100%
+  );
   box-shadow: none;
 }
 
@@ -242,8 +247,8 @@
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--accent) 78%, transparent) 30%,
-    color-mix(in srgb, #35c98e 65%, transparent) 70%,
+    color-mix(in srgb, var(--accent) 62%, transparent) 30%,
+    color-mix(in srgb, var(--accent) 88%, transparent) 70%,
     transparent
   );
   opacity: 0.85;

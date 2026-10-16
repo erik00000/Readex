@@ -115,6 +115,7 @@ export function ReaderView({
   const [speechState, setSpeechState] = useState<SpeechPlaybackState>('idle')
   const progressTimer = useRef<number | null>(null)
   const currentLocatorRef = useRef<ReadingLocator | null>(initialLocator)
+  const currentProgressRef = useRef<number | null>(null)
   const overlayRoot = document.querySelector<HTMLElement>('.app-shell') ?? document.body
 
   useEffect(() => {
@@ -219,13 +220,24 @@ export function ReaderView({
     void window.readex.windowControl.closeFloatingReader()
   }, [stopSpeech])
 
+  const flushProgress = useCallback((): void => {
+    if (progressTimer.current) {
+      window.clearTimeout(progressTimer.current)
+      progressTimer.current = null
+    }
+    const locator = currentLocatorRef.current
+    const progress = currentProgressRef.current
+    if (!locator?.value.trim() || progress === null) return
+    void window.readex.reading.saveState(book.id, locator, progress)
+  }, [book.id])
+
   useEffect(() => {
     return () => {
-      if (progressTimer.current) window.clearTimeout(progressTimer.current)
+      flushProgress()
       readerRef.current?.stopAutoScroll()
       speechControllerRef.current?.destroy()
     }
-  }, [])
+  }, [flushProgress])
 
   useEffect(() => {
     if (!floatingWindow) return
@@ -345,6 +357,7 @@ export function ReaderView({
   const handleProgress = useCallback(
     (locator: ReadingLocator, progress: number): void => {
       currentLocatorRef.current = locator
+      currentProgressRef.current = progress
       if (locator.value.trim()) {
         const activeItem = findTocItemForLocator(toc, locator)
         if (activeItem) setActiveTocId(activeItem.id)
@@ -353,8 +366,9 @@ export function ReaderView({
       if (!locator.value.trim()) return
       if (progressTimer.current) window.clearTimeout(progressTimer.current)
       progressTimer.current = window.setTimeout(() => {
+        progressTimer.current = null
         void window.readex.reading.saveState(book.id, locator, progress)
-      }, 650)
+      }, 250)
     },
     [book.id, onProgress, toc]
   )

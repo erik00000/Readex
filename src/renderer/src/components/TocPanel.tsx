@@ -17,7 +17,7 @@ export function TocPanel({
     <div className="side-panel-content">
       <div className="panel-title">
         <ListTree size={16} />
-        <span>目录</span>
+        <span>目录（{countLeafItems(items)} {getCountUnit(items)}）</span>
       </div>
       {items.length === 0 ? (
         <div className="panel-empty">这本书没有可用的目录信息</div>
@@ -35,6 +35,24 @@ export function TocPanel({
       )}
     </div>
   )
+}
+
+function countLeafItems(items: TocItem[]): number {
+  return items.reduce(
+    (count, item) => count + (item.children?.length ? countLeafItems(item.children) : 1),
+    0
+  )
+}
+
+function getCountUnit(items: TocItem[]): string {
+  const leaves = flattenLeaves(items)
+  return leaves.length > 0 && leaves.every((item) => /^第\s*\d+\s*章/.test(item.label))
+    ? '章'
+    : '项'
+}
+
+function flattenLeaves(items: TocItem[]): TocItem[] {
+  return items.flatMap((item) => (item.children?.length ? flattenLeaves(item.children) : [item]))
 }
 
 function TocNode({

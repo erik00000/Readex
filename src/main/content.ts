@@ -10,6 +10,10 @@ import type {
 import { ReadexStorage, readJson, writeJsonAtomic } from './storage'
 import { decodeTextBuffer } from './text'
 
+// Bump this whenever the TXT chapter/TOC mapping changes. Existing cached
+// content must be reparsed so old fixed-section IDs cannot affect navigation.
+const TXT_CONTENT_PARSER_VERSION = 2
+
 export async function getBookContent(
   storage: ReadexStorage,
   book: BookRecord
@@ -23,7 +27,11 @@ export async function getBookContent(
 
   const cachePath = path.join(storage.getPaths().parseCache, book.id, 'content.json')
   const cached = await readJson<BookContent | null>(cachePath, null)
-  if (cached && cached.format === book.format) {
+  if (
+    cached &&
+    cached.format === book.format &&
+    (book.format !== 'txt' || cached.parserVersion === TXT_CONTENT_PARSER_VERSION)
+  ) {
     return cached
   }
 
@@ -144,15 +152,44 @@ export async function parseTxtContent(sourcePath: string): Promise<BookContent> 
   const chapters = splitTxtIntoChapters(text)
   return {
     format: 'txt',
+    parserVersion: TXT_CONTENT_PARSER_VERSION,
     toc: chapters.map((chapter) => ({
       id: chapter.id,
-      label: chapter.label
+      label: chapter.label,
+      chapterId: chapter.id
     })),
     chapters
   }
 }
 
 function splitTxtIntoChapters(text: string): NormalizedChapter[] {
+  const headingPattern = /^[ \t]*第[ \t]*\d+[ \t]*(?:章|节|回|篇|卷|部)[^\r\n]*$/gm
+  const headings = [...text.matchAll(headingPattern)]
+  if (headings.length > 0) {
+    const occurrences = new Map<number, number>()
+    return headings.map((match, index) => {
+      const start = match.index ?? 0
+      const end = headings[index + 1]?.index ?? text.length
+      const heading = match[0].trim().replace(/\s+/g, ' ')
+      const numberMatch = heading.match(/^第\s*(\d+)/)
+      const chapterNumber = numberMatch ? Number(numberMatch[1]) : index + 1
+      const occurrence = occurrences.get(chapterNumber) ?? 0
+      occurrences.set(chapterNumber, occurrence + 1)
+      const prefix = index === 0 ? text.slice(0, start).trim() : ''
+      const body = text.slice(start, end).trim()
+      const value = prefix ? `${prefix}\n\n${body}` : body
+      return {
+        id: `txt-chapter-${chapterNumber}-${occurrence}`,
+        label: heading,
+        html: value
+          .split(/\n{2,}/)
+          .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br />')}</p>`)
+          .join(''),
+        text: value
+      }
+    })
+  }
+
   const targetSize = 24_000
   const chapters: NormalizedChapter[] = []
   let cursor = 0

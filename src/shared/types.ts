@@ -137,6 +137,8 @@ export interface NormalizedChapter {
 
 export interface BookContent {
   format: BookFormat
+  /** Parser generation used to create this cache entry. */
+  parserVersion?: number
   toc: TocItem[]
   chapters?: NormalizedChapter[]
   text?: string

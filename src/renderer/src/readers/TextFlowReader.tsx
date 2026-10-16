@@ -14,7 +14,8 @@ import {
   applyTextHighlights,
   clearTextHighlights,
   locatorFromSelection,
-  scrollToTextOffset
+  scrollToTextOffset,
+  textOffsetAtPoint
 } from '../lib/textAnchors'
 import { AutoScrollController } from '../lib/autoScroll'
 import {
@@ -74,7 +75,11 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
           if (!active) return
           if (!value) throw new Error('无法读取书籍内容')
           setContent(value)
-          onTocChange(value.toc)
+          onTocChange(
+            format === 'txt'
+              ? value.toc.map((item) => ({ ...item, chapterId: item.chapterId ?? item.id }))
+              : value.toc
+          )
         })
         .catch((error) => onError(error instanceof Error ? error.message : '书籍内容读取失败'))
         .finally(() => active && setLoading(false))
@@ -110,7 +115,19 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       if (!content || loading) return
       void window.readex.reading.getState(book.id).then((state) => {
         if (state?.locator) pendingLocator.current = state.locator
-        if (pendingLocator.current) goTo(pendingLocator.current)
+        if (pendingLocator.current) {
+          goTo(pendingLocator.current)
+        } else if (state && Number.isFinite(state.progress)) {
+          window.setTimeout(() => {
+            const current = scrollRef.current
+            if (!current) return
+            const max = Math.max(0, current.scrollHeight - current.clientHeight)
+            current.scrollTo({
+              top: Math.max(0, Math.min(1, state.progress)) * max,
+              behavior: 'auto'
+            })
+          }, 900)
+        }
       })
       // Initial positioning only; later navigation is driven by the imperative API.
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,7 +154,14 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     }, [loading])
 
     const goTo = (target: Parameters<ReaderHandle['goTo']>[0]): void => {
-      const chapterId = 'chapterId' in target ? target.chapterId : undefined
+      const chapterId =
+        'chapterId' in target && target.chapterId
+          ? target.chapterId
+          : 'id' in target && target.id.startsWith('txt-')
+            ? target.id
+            : 'value' in target && target.type === 'text-offset' && target.value.startsWith('txt-')
+              ? target.value.split(':', 1)[0]
+              : undefined
       const start = 'start' in target ? target.start : undefined
       const scrollRoot = scrollRef.current
       if (!scrollRoot) {
@@ -146,11 +170,20 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       }
 
       if (chapterId) {
-        const chapter = chapterRefs.current.get(chapterId)
+        const resolvedChapterId = resolveChapterId(chapterId, safeChapters)
+        const chapter = resolvedChapterId
+          ? chapterRefs.current.get(resolvedChapterId)
+          : undefined
         if (chapter) {
-          chapter.scrollIntoView({ block: 'start', behavior: 'smooth' })
+          const rootRect = scrollRoot.getBoundingClientRect()
+          const chapterRect = chapter.getBoundingClientRect()
+          const top = scrollRoot.scrollTop + chapterRect.top - rootRect.top
+          // A TOC click is a direct navigation request. Smooth scrolling emits
+          // intermediate scroll events, and those events can save a transient
+          // chapter as the new reading position before the animation finishes.
+          scrollRoot.scrollTo({ top, behavior: 'auto' })
           if (start !== undefined) {
-            window.setTimeout(() => scrollToTextOffset(chapter, start), 250)
+            window.setTimeout(() => scrollToTextOffset(chapter, start), 0)
           }
           return
         }
@@ -268,12 +301,15 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       const max = Math.max(1, root.scrollHeight - root.clientHeight)
       const progress = Math.max(0, Math.min(1, root.scrollTop / max))
       const visibleChapter = findVisibleChapter(root, chapterRefs.current)
+      const start = visibleChapter
+        ? findVisibleChapterStart(root, chapterRefs.current, visibleChapter.id)
+        : 0
       onProgress(
         {
           type: format === 'mobi' ? 'mobi-offset' : 'text-offset',
           value: visibleChapter?.id ?? 'start',
           chapterId: visibleChapter?.id,
-          start: 0
+          start
         },
         progress
       )
@@ -334,18 +370,71 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
   }
 )
 
+function findVisibleChapterStart(
+  scrollRoot: HTMLElement,
+  chapters: Map<string, HTMLElement>,
+  chapterId: string
+): number {
+  const chapter = chapters.get(chapterId)
+  if (!chapter) return 0
+
+  const rootRect = scrollRoot.getBoundingClientRect()
+  const chapterRect = chapter.getBoundingClientRect()
+  const top = Math.max(rootRect.top + 8, chapterRect.top + 8)
+  const bottom = Math.min(rootRect.bottom - 8, chapterRect.bottom - 1)
+  if (top > bottom) return 0
+  const yCandidates = [
+    Math.min(bottom, Math.max(top, rootRect.top + rootRect.height * 0.3)),
+    Math.min(bottom, Math.max(top, rootRect.top + rootRect.height * 0.45)),
+    Math.min(bottom, Math.max(top, rootRect.top + rootRect.height * 0.6))
+  ]
+  const xCandidates = [
+    rootRect.left + rootRect.width / 2,
+    rootRect.left + Math.min(48, rootRect.width / 2),
+    rootRect.right - Math.min(48, rootRect.width / 2)
+  ]
+  for (const y of yCandidates) {
+    for (const x of xCandidates) {
+      const offset = textOffsetAtPoint(chapter, x, y)
+      if (offset !== null) return offset
+    }
+  }
+  return 0
+}
+
+function resolveChapterId(
+  chapterId: string,
+  chapters: Array<{ id: string }>
+): string | undefined {
+  if (chapters.some((chapter) => chapter.id === chapterId)) return chapterId
+  const legacy = /^txt-(\d+)$/.exec(chapterId)
+  if (!legacy) return undefined
+  return chapters[Number(legacy[1]) - 1]?.id
+}
+
 function findVisibleChapter(
   scrollRoot: HTMLElement,
   chapters: Map<string, HTMLElement>
 ): { id: string } | null {
   const rootRect = scrollRoot.getBoundingClientRect()
-  let closest: { id: string; distance: number } | null = null
+  const readingLine = rootRect.top + Math.min(32, rootRect.height * 0.12)
+  let firstVisible: { id: string; top: number } | null = null
+  let nextVisible: { id: string; top: number } | null = null
   for (const [id, element] of chapters) {
     const rect = element.getBoundingClientRect()
-    const distance = Math.abs(rect.top - rootRect.top)
-    if (!closest || distance < closest.distance) closest = { id, distance }
+    if (rect.bottom <= readingLine) continue
+
+    // Prefer the last chapter whose top has crossed the reading line. This
+    // avoids picking a later chapter merely because its heading is physically
+    // closer to the viewport top while the previous chapter is still being
+    // read. If the line is above the first chapter, use that first visible one.
+    if (rect.top <= readingLine) {
+      firstVisible = { id, top: rect.top }
+    } else if (!nextVisible) {
+      nextVisible = { id, top: rect.top }
+    }
   }
-  return closest
+  return firstVisible ?? nextVisible
 }
 
 export function ReaderLoading({ label }: { label: string }): React.JSX.Element {

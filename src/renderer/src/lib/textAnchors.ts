@@ -100,6 +100,26 @@ export function scrollToTextOffset(root: HTMLElement, start: number): void {
   element?.scrollIntoView({ block: 'center', behavior: 'smooth' })
 }
 
+export function textOffsetAtPoint(root: HTMLElement, x: number, y: number): number | null {
+  const documentWithCaret = root.ownerDocument as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => {
+      offsetNode: Node
+      offset: number
+    } | null
+  }
+  let range = root.ownerDocument.caretRangeFromPoint(x, y)
+  if (!range && documentWithCaret.caretPositionFromPoint) {
+    const position = documentWithCaret.caretPositionFromPoint(x, y)
+    if (position) {
+      range = root.ownerDocument.createRange()
+      range.setStart(position.offsetNode, position.offset)
+      range.collapse(true)
+    }
+  }
+  if (!range || !root.contains(range.startContainer)) return null
+  return getTextOffset(root, range.startContainer, range.startOffset)
+}
+
 function getTextOffset(root: HTMLElement, node: Node, offset: number): number {
   const range = document.createRange()
   range.selectNodeContents(root)

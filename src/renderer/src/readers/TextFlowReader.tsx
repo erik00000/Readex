@@ -237,6 +237,13 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
           for (const delay of [50, 180, 450, 900]) {
             navigation.timers.push(window.setTimeout(settle, delay))
           }
+          navigation.timers.push(
+            window.setTimeout(() => {
+              if (navigationTarget.current === navigation) {
+                navigationTarget.current = null
+              }
+            }, 1100)
+          )
           void document.fonts?.ready.then(settle)
           return
         }

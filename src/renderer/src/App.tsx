@@ -45,7 +45,7 @@ export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [infoMode, setInfoMode] = useState<InfoMode | null>(null)
-  const [version, setVersion] = useState('0.1.0')
+  const [version, setVersion] = useState('0.1.1')
   const [importJobs, setImportJobs] = useState<ImportJob[]>([])
   const [importCompleted, setImportCompleted] = useState(0)
   const [importTotal, setImportTotal] = useState(0)

@@ -7,6 +7,8 @@ export type AnnotationColor = 'yellow' | 'green' | 'blue' | 'pink'
 export type AnnotationType = 'highlight' | 'comment' | 'bookmark'
 /** How the auto-scroll reading focus is visualised. */
 export type AutoScrollHighlightStyle = 'band' | 'sentence'
+/** How the reading viewport advances when using the wheel or arrow controls. */
+export type ReadingMode = 'continuous' | 'paged'
 
 export interface BookMetadata {
   title: string
@@ -52,6 +54,7 @@ export interface ReaderSettings {
   pdfScale: number
   wheelScrollStep: number
   smoothScrolling: boolean
+  readingMode: ReadingMode
   autoScrollSpeed: number
   autoScrollColor: string
   autoScrollHighlight: boolean
@@ -226,6 +229,7 @@ export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   pdfScale: 1,
   wheelScrollStep: 48,
   smoothScrolling: true,
+  readingMode: 'continuous',
   autoScrollSpeed: 25,
   autoScrollColor: '#b7e4c7',
   autoScrollHighlight: true,

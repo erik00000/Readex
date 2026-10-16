@@ -5,12 +5,17 @@ import {
   Headphones,
   LoaderCircle,
   Minimize2,
+  Rows3,
   Pause,
   Play,
   Square,
   Volume2
 } from 'lucide-react'
-import { DEFAULT_READER_SETTINGS, type ReaderSettings } from '@shared/types'
+import {
+  DEFAULT_READER_SETTINGS,
+  type ReaderSettings,
+  type ReadingMode
+} from '@shared/types'
 import {
   TTS_MAX_RATE,
   TTS_MAX_VOLUME,
@@ -29,6 +34,8 @@ import {
 interface ReaderScrollControlsProps {
   onScroll: (delta: number) => void
   step: number
+  readingMode: ReadingMode
+  onReadingModeChange: (mode: ReadingMode) => void
   autoScrollOn: boolean
   autoScrollSpeed: number
   onToggleAutoScroll: () => void
@@ -50,6 +57,8 @@ interface ReaderScrollControlsProps {
 export function ReaderScrollControls({
   onScroll,
   step,
+  readingMode,
+  onReadingModeChange,
   autoScrollOn,
   autoScrollSpeed,
   onToggleAutoScroll,
@@ -284,7 +293,7 @@ export function ReaderScrollControls({
         <span />
         <button
           type="button"
-          title={`向上移动 ${step} 像素`}
+          title={readingMode === 'paged' ? '向上翻页' : `向上移动 ${step} 像素`}
           onClick={() => onScroll(-step)}
         >
           <ChevronUp size={16} />
@@ -292,10 +301,23 @@ export function ReaderScrollControls({
         <span />
         <button
           type="button"
-          title={`向下移动 ${step} 像素`}
+          title={readingMode === 'paged' ? '向下翻页' : `向下移动 ${step} 像素`}
           onClick={() => onScroll(step)}
         >
           <ChevronDown size={16} />
+        </button>
+        <span />
+        <button
+          className={readingMode === 'paged' ? 'active' : ''}
+          type="button"
+          title={readingMode === 'paged' ? '切换为连续滚动' : '切换为上下分页'}
+          aria-label={readingMode === 'paged' ? '切换为连续滚动' : '切换为上下分页'}
+          aria-pressed={readingMode === 'paged'}
+          onClick={() =>
+            onReadingModeChange(readingMode === 'paged' ? 'continuous' : 'paged')
+          }
+        >
+          <Rows3 size={15} />
         </button>
         {floating && onExitFloating && (
           <>

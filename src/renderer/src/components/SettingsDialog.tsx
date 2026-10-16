@@ -1,6 +1,7 @@
 import {
   Highlighter,
   MoveVertical,
+  Rows3,
   PictureInPicture2,
   Play,
   RotateCcw,
@@ -253,6 +254,23 @@ export function SettingsDialog({
                 onChange={(event) => patch({ smoothScrolling: event.target.checked })}
               />
               <i />
+            </label>
+            <label className="field">
+              <span>
+                <Rows3 size={15} />
+                阅读方式
+              </span>
+              <select
+                value={settings.readingMode}
+                onChange={(event) =>
+                  patch({
+                    readingMode: event.target.value as ReaderSettings['readingMode']
+                  })
+                }
+              >
+                <option value="continuous">连续滚动</option>
+                <option value="paged">上下分页</option>
+              </select>
             </label>
           </div>
 

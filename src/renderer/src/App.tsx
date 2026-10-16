@@ -45,7 +45,7 @@ export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [infoMode, setInfoMode] = useState<InfoMode | null>(null)
-  const [version, setVersion] = useState('0.1.1')
+  const [version, setVersion] = useState('0.1.2')
   const [importJobs, setImportJobs] = useState<ImportJob[]>([])
   const [importCompleted, setImportCompleted] = useState(0)
   const [importTotal, setImportTotal] = useState(0)
@@ -650,6 +650,12 @@ export default function App(): React.JSX.Element {
                 onProgress={handleBookProgress}
                 onChapterProgress={setChapterProgress}
                 onAnnotationsChanged={() => setAnnotationsLoaded(false)}
+                onReadingModeChange={(readingMode) =>
+                  setSettings((current) => ({
+                    ...current,
+                    reader: { ...current.reader, readingMode }
+                  }))
+                }
                 onAutoScrollSpeedChange={(autoScrollSpeed) =>
                   setSettings((current) => ({
                     ...current,

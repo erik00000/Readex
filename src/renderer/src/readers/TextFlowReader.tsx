@@ -52,12 +52,17 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     const [loading, setLoading] = useState(true)
     const scrollRef = useRef<HTMLDivElement>(null)
     const chapterRefs = useRef(new Map<string, HTMLElement>())
+    const chapterEntries = useRef<Array<[string, HTMLElement]>>([])
     const speechSegments = useRef(new Map<string, Range>())
     const pendingLocator = useRef<Parameters<ReaderHandle['goTo']>[0] | null>(null)
     const navigationTarget = useRef<{
       locator: ReadingLocator
       timers: number[]
     } | null>(null)
+    const progressFrame = useRef<number | null>(null)
+    const lastChapterId = useRef<string | null>(null)
+    const lastChapterStart = useRef(0)
+    const lastPageTurnAt = useRef(0)
     const settingsRef = useRef(settings)
     const autoScrollControllerRef = useRef<AutoScrollController | null>(null)
     const autoScrollEndHandler = useRef<(() => void) | null>(null)
@@ -69,6 +74,14 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     useEffect(() => {
       settingsRef.current = settings
     }, [settings])
+
+    useEffect(() => {
+      return () => {
+        if (progressFrame.current !== null) {
+          window.cancelAnimationFrame(progressFrame.current)
+        }
+      }
+    }, [])
 
     useEffect(() => {
       let active = true
@@ -147,6 +160,18 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
         navigationTarget.current = null
         onReaderPointerDown()
         const current = settingsRef.current
+        if (current.readingMode === 'paged') {
+          const now = performance.now()
+          if (now - lastPageTurnAt.current < 140) return
+          lastPageTurnAt.current = now
+          const page = Math.max(1, Math.floor(root.clientHeight * 0.88))
+          const max = Math.max(0, root.scrollHeight - root.clientHeight)
+          root.scrollTo({
+            top: Math.max(0, Math.min(max, root.scrollTop + Math.sign(event.deltaY) * page)),
+            behavior: 'auto'
+          })
+          return
+        }
         const delta = normalizedWheelDelta(
           event.deltaY,
           event.deltaMode,
@@ -263,7 +288,17 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       if (root) {
         navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
         navigationTarget.current = null
-        smoothScrollBy(root, delta, settingsRef.current.smoothScrolling)
+        const current = settingsRef.current
+        if (current.readingMode === 'paged') {
+          const page = Math.max(1, Math.floor(root.clientHeight * 0.88))
+          const max = Math.max(0, root.scrollHeight - root.clientHeight)
+          root.scrollTo({
+            top: Math.max(0, Math.min(max, root.scrollTop + Math.sign(delta) * page)),
+            behavior: 'auto'
+          })
+          return
+        }
+        smoothScrollBy(root, delta, current.smoothScrolling)
       }
     }
 
@@ -362,27 +397,35 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     useEffect(() => removeSpeechHighlight, [book.id])
 
     const reportProgress = (): void => {
-      const root = scrollRef.current
-      if (!root || !content) return
-      const max = Math.max(1, root.scrollHeight - root.clientHeight)
-      const progress = Math.max(0, Math.min(1, root.scrollTop / max))
-      if (navigationTarget.current) {
-        onProgress(navigationTarget.current.locator, progress)
-        return
-      }
-      const visibleChapter = findVisibleChapter(root, chapterRefs.current)
-      const start = visibleChapter
-        ? findVisibleChapterStart(root, chapterRefs.current, visibleChapter.id)
-        : 0
-      onProgress(
-        {
-          type: format === 'mobi' ? 'mobi-offset' : 'text-offset',
-          value: visibleChapter?.id ?? 'start',
-          chapterId: visibleChapter?.id,
-          start
-        },
-        progress
-      )
+      if (progressFrame.current !== null) return
+      progressFrame.current = window.requestAnimationFrame(() => {
+        progressFrame.current = null
+        const root = scrollRef.current
+        if (!root || !content) return
+        const max = Math.max(1, root.scrollHeight - root.clientHeight)
+        const progress = Math.max(0, Math.min(1, root.scrollTop / max))
+        if (navigationTarget.current) {
+          onProgress(navigationTarget.current.locator, progress)
+          return
+        }
+        const visibleChapter = findVisibleChapter(root, chapterEntries.current)
+        const chapterId = visibleChapter?.id ?? null
+        if (chapterId !== lastChapterId.current) {
+          lastChapterId.current = chapterId
+          lastChapterStart.current = chapterId
+            ? findVisibleChapterStart(root, chapterRefs.current, chapterId)
+            : 0
+        }
+        onProgress(
+          {
+            type: format === 'mobi' ? 'mobi-offset' : 'text-offset',
+            value: chapterId ?? 'start',
+            chapterId: chapterId ?? undefined,
+            start: lastChapterStart.current
+          },
+          progress
+        )
+      })
     }
 
     if (loading) {
@@ -420,6 +463,7 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
               ref={(element) => {
                 if (element) chapterRefs.current.set(chapter.id, element)
                 else chapterRefs.current.delete(chapter.id)
+                chapterEntries.current = [...chapterRefs.current.entries()]
               }}
               onMouseUp={() => {
                 const root = chapterRefs.current.get(chapter.id)
@@ -484,27 +528,28 @@ function resolveChapterId(
 
 function findVisibleChapter(
   scrollRoot: HTMLElement,
-  chapters: Map<string, HTMLElement>
+  chapters: Array<[string, HTMLElement]>
 ): { id: string } | null {
   const rootRect = scrollRoot.getBoundingClientRect()
-  const readingLine = rootRect.top + Math.min(32, rootRect.height * 0.12)
-  let firstVisible: { id: string; top: number } | null = null
-  let nextVisible: { id: string; top: number } | null = null
-  for (const [id, element] of chapters) {
-    const rect = element.getBoundingClientRect()
-    if (rect.bottom <= readingLine) continue
+  const readingTop = scrollRoot.scrollTop + Math.min(32, rootRect.height * 0.12)
+  if (chapters.length === 0) return null
 
-    // Prefer the last chapter whose top has crossed the reading line. This
-    // avoids picking a later chapter merely because its heading is physically
-    // closer to the viewport top while the previous chapter is still being
-    // read. If the line is above the first chapter, use that first visible one.
-    if (rect.top <= readingLine) {
-      firstVisible = { id, top: rect.top }
-    } else if (!nextVisible) {
-      nextVisible = { id, top: rect.top }
+  // Chapter sections are direct children of the article and stay in document
+  // order. Binary search avoids forcing layout for every chapter on every
+  // scroll event (large TXT files commonly contain hundreds of sections).
+  let low = 0
+  let high = chapters.length - 1
+  let candidate = 0
+  while (low <= high) {
+    const middle = (low + high) >> 1
+    if (chapters[middle][1].offsetTop <= readingTop) {
+      candidate = middle
+      low = middle + 1
+    } else {
+      high = middle - 1
     }
   }
-  return firstVisible ?? nextVisible
+  return { id: chapters[candidate][0] }
 }
 
 export function ReaderLoading({ label }: { label: string }): React.JSX.Element {

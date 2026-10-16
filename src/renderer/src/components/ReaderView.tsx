@@ -61,6 +61,7 @@ interface ReaderViewProps {
   onProgress: (bookId: string, locator: ReadingLocator, progress: number) => void
   onChapterProgress: (progress: ChapterProgress | null) => void
   onAnnotationsChanged: () => void
+  onReadingModeChange: (mode: ReaderSettings['readingMode']) => void
   onAutoScrollSpeedChange: (speed: number) => void
   onTtsSettingsChange: (
     patch: Partial<Pick<ReaderSettings, 'ttsVoice' | 'ttsRate' | 'ttsVolume'>>
@@ -89,6 +90,7 @@ export function ReaderView({
   onProgress,
   onChapterProgress,
   onAnnotationsChanged,
+  onReadingModeChange,
   onAutoScrollSpeedChange,
   onTtsSettingsChange,
   floatingWindow = false
@@ -657,6 +659,8 @@ export function ReaderView({
           {reader}
           <ReaderScrollControls
             step={settings.wheelScrollStep}
+            readingMode={settings.readingMode}
+            onReadingModeChange={onReadingModeChange}
             onScroll={(delta) => {
               stopAutoScroll()
               readerRef.current?.scrollBy(delta)

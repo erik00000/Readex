@@ -24,7 +24,7 @@ export function smoothScrollBy(
   element: HTMLElement,
   delta: number,
   smooth: boolean,
-  duration = 150
+  duration = 110
 ): void {
   const max = Math.max(0, element.scrollHeight - element.clientHeight)
   if (!smooth || Math.abs(delta) < 1) {

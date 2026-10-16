@@ -104,6 +104,16 @@ export function FloatingApp(): React.JSX.Element {
             onProgress={() => undefined}
             onChapterProgress={() => undefined}
             onAnnotationsChanged={() => undefined}
+            onReadingModeChange={(readingMode) => {
+              setSettings((current) => {
+                const next = {
+                  ...current,
+                  reader: { ...current.reader, readingMode }
+                }
+                void window.readex.settings.update(next)
+                return next
+              })
+            }}
             onAutoScrollSpeedChange={(autoScrollSpeed) => {
               setSettings((current) => {
                 const next = {

@@ -325,6 +325,7 @@ export function migrateReaderSettings(
       : DEFAULT_TTS_VOICE
   reader.ttsRate = clampNumber(input?.ttsRate, TTS_MIN_RATE, TTS_MAX_RATE, 1)
   reader.ttsVolume = clampNumber(input?.ttsVolume, TTS_MIN_VOLUME, TTS_MAX_VOLUME, 1)
+  reader.readingMode = input?.readingMode === 'paged' ? 'paged' : 'continuous'
   if (input?.floatingReaderWidth === undefined) {
     reader.floatingReaderWidth = input?.contentWidth ?? reader.contentWidth
   }

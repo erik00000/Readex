@@ -40,4 +40,15 @@ describe('reader settings migration', () => {
         .autoScrollSpeed
     ).toBe(48)
   })
+
+  it('defaults new reading mode to continuous and preserves paged mode', () => {
+    expect(migrateReaderSettings({}).readingMode).toBe('continuous')
+    expect(
+      migrateReaderSettings({ ...DEFAULT_READER_SETTINGS, readingMode: 'paged' }).readingMode
+    ).toBe('paged')
+    expect(
+      migrateReaderSettings({ ...DEFAULT_READER_SETTINGS, readingMode: 'invalid' as never })
+        .readingMode
+    ).toBe('continuous')
+  })
 })

@@ -94,6 +94,18 @@ export const EpubReader = forwardRef<ReaderHandle, ReaderProps>(function EpubRea
           event.preventDefault()
           onReaderPointerDown()
           const current = settingsRef.current
+          if (current.readingMode === 'paged') {
+            const page = Math.max(1, Math.floor(content.window.innerHeight * 0.88))
+            const max = Math.max(0, container.scrollHeight - container.clientHeight)
+            container.scrollTo({
+              top: Math.max(
+                0,
+                Math.min(max, container.scrollTop + Math.sign(event.deltaY) * page)
+              ),
+              behavior: 'auto'
+            })
+            return
+          }
           smoothScrollBy(
             container,
             normalizedWheelDelta(
@@ -453,7 +465,17 @@ export const EpubReader = forwardRef<ReaderHandle, ReaderProps>(function EpubRea
     const container = mountRef.current?.querySelector('.epub-container') as HTMLElement | null
     if (container) {
       onReaderPointerDown()
-      smoothScrollBy(container, delta, settingsRef.current.smoothScrolling)
+      const current = settingsRef.current
+      if (current.readingMode === 'paged') {
+        const page = Math.max(1, Math.floor(container.clientHeight * 0.88))
+        const max = Math.max(0, container.scrollHeight - container.clientHeight)
+        container.scrollTo({
+          top: Math.max(0, Math.min(max, container.scrollTop + Math.sign(delta) * page)),
+          behavior: 'auto'
+        })
+        return
+      }
+      smoothScrollBy(container, delta, current.smoothScrolling)
     }
   }
 

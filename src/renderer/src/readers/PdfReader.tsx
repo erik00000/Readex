@@ -124,6 +124,15 @@ export const PdfReader = forwardRef<ReaderHandle, ReaderProps>(function PdfReade
       event.preventDefault()
       onReaderPointerDown()
       const current = settingsRef.current
+      if (current.readingMode === 'paged') {
+        const page = Math.max(1, Math.floor(root.clientHeight * 0.88))
+        const max = Math.max(0, root.scrollHeight - root.clientHeight)
+        root.scrollTo({
+          top: Math.max(0, Math.min(max, root.scrollTop + Math.sign(event.deltaY) * page)),
+          behavior: 'auto'
+        })
+        return
+      }
       smoothScrollBy(
         root,
         normalizedWheelDelta(
@@ -247,7 +256,18 @@ export const PdfReader = forwardRef<ReaderHandle, ReaderProps>(function PdfReade
 
   const scrollBy = (delta: number): void => {
     const root = scrollRef.current
-    if (root) smoothScrollBy(root, delta, settingsRef.current.smoothScrolling)
+    if (!root) return
+    const current = settingsRef.current
+    if (current.readingMode === 'paged') {
+      const page = Math.max(1, Math.floor(root.clientHeight * 0.88))
+      const max = Math.max(0, root.scrollHeight - root.clientHeight)
+      root.scrollTo({
+        top: Math.max(0, Math.min(max, root.scrollTop + Math.sign(delta) * page)),
+        behavior: 'auto'
+      })
+      return
+    }
+    smoothScrollBy(root, delta, current.smoothScrolling)
   }
 
   const ensureAutoScrollController = (): AutoScrollController => {

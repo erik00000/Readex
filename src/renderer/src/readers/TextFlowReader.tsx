@@ -54,6 +54,10 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     const chapterRefs = useRef(new Map<string, HTMLElement>())
     const speechSegments = useRef(new Map<string, Range>())
     const pendingLocator = useRef<Parameters<ReaderHandle['goTo']>[0] | null>(null)
+    const navigationTarget = useRef<{
+      locator: ReadingLocator
+      timers: number[]
+    } | null>(null)
     const settingsRef = useRef(settings)
     const autoScrollControllerRef = useRef<AutoScrollController | null>(null)
     const autoScrollEndHandler = useRef<(() => void) | null>(null)
@@ -139,6 +143,8 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       const onWheel = (event: WheelEvent): void => {
         if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
         event.preventDefault()
+        navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
+        navigationTarget.current = null
         onReaderPointerDown()
         const current = settingsRef.current
         const delta = normalizedWheelDelta(
@@ -149,9 +155,24 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
         )
         smoothScrollBy(root, delta, current.smoothScrolling)
       }
+      const onPointerDown = (): void => {
+        navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
+        navigationTarget.current = null
+        onReaderPointerDown()
+      }
+      const onKeyDown = (): void => {
+        navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
+        navigationTarget.current = null
+      }
       root.addEventListener('wheel', onWheel, { passive: false })
-      return () => root.removeEventListener('wheel', onWheel)
-    }, [loading])
+      root.addEventListener('pointerdown', onPointerDown)
+      root.addEventListener('keydown', onKeyDown)
+      return () => {
+        root.removeEventListener('wheel', onWheel)
+        root.removeEventListener('pointerdown', onPointerDown)
+        root.removeEventListener('keydown', onKeyDown)
+      }
+    }, [loading, onReaderPointerDown])
 
     const goTo = (target: Parameters<ReaderHandle['goTo']>[0]): void => {
       const chapterId =
@@ -175,14 +196,9 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
           ? chapterRefs.current.get(resolvedChapterId)
           : undefined
         if (resolvedChapterId && chapter) {
-          const rootRect = scrollRoot.getBoundingClientRect()
-          const chapterRect = chapter.getBoundingClientRect()
-          const top = scrollRoot.scrollTop + chapterRect.top - rootRect.top
           // A TOC click is a direct navigation request. Smooth scrolling emits
           // intermediate scroll events, and those events can save a transient
           // chapter as the new reading position before the animation finishes.
-          scrollRoot.scrollTo({ top, behavior: 'auto' })
-          const max = Math.max(1, scrollRoot.scrollHeight - scrollRoot.clientHeight)
           const locator: ReadingLocator = {
             type: format === 'mobi' ? 'mobi-offset' : 'text-offset',
             value: resolvedChapterId,
@@ -190,15 +206,38 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
             start: start ?? 0
           }
 
-          // Do not wait for a debounced scroll event here. A user can click a
-          // distant chapter and close the window immediately, before the
-          // browser emits the final scroll event and React unmounts.
-          const nextProgress = Math.max(0, Math.min(1, top / max))
-          onProgress(locator, nextProgress)
-          void window.readex.reading.saveState(book.id, locator, nextProgress)
-          if (start !== undefined) {
-            window.setTimeout(() => scrollToTextOffset(chapter, start), 0)
+          const previousNavigation = navigationTarget.current
+          previousNavigation?.timers.forEach((timer) => window.clearTimeout(timer))
+          const navigation = { locator, timers: [] as number[] }
+          navigationTarget.current = navigation
+
+          const settle = (): void => {
+            if (navigationTarget.current !== navigation) return
+            const rootRect = scrollRoot.getBoundingClientRect()
+            const chapterRect = chapter.getBoundingClientRect()
+            const top = scrollRoot.scrollTop + chapterRect.top - rootRect.top
+            scrollRoot.scrollTo({ top, behavior: 'auto' })
+            const max = Math.max(1, scrollRoot.scrollHeight - scrollRoot.clientHeight)
+            const nextProgress = Math.max(0, Math.min(1, top / max))
+            onProgress(locator, nextProgress)
+            void window.readex.reading.saveState(book.id, locator, nextProgress)
+            if (start !== undefined) {
+              window.setTimeout(() => {
+                if (navigationTarget.current === navigation) {
+                  scrollToTextOffset(chapter, start, 'auto')
+                }
+              }, 0)
+            }
           }
+
+          // Font loading and layout recalculation can move a distant chapter
+          // after the first scroll. Recalculate its real position several
+          // times, including after document fonts settle.
+          settle()
+          for (const delay of [50, 180, 450, 900]) {
+            navigation.timers.push(window.setTimeout(settle, delay))
+          }
+          void document.fonts?.ready.then(settle)
           return
         }
       }
@@ -214,7 +253,11 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
 
     const scrollBy = (delta: number): void => {
       const root = scrollRef.current
-      if (root) smoothScrollBy(root, delta, settingsRef.current.smoothScrolling)
+      if (root) {
+        navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
+        navigationTarget.current = null
+        smoothScrollBy(root, delta, settingsRef.current.smoothScrolling)
+      }
     }
 
     const ensureAutoScrollController = (): AutoScrollController => {
@@ -251,6 +294,8 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     }
 
     const startAutoScroll = (): AutoScrollStatus => {
+      navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
+      navigationTarget.current = null
       return ensureAutoScrollController().start()
     }
 
@@ -314,6 +359,10 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       if (!root || !content) return
       const max = Math.max(1, root.scrollHeight - root.clientHeight)
       const progress = Math.max(0, Math.min(1, root.scrollTop / max))
+      if (navigationTarget.current) {
+        onProgress(navigationTarget.current.locator, progress)
+        return
+      }
       const visibleChapter = findVisibleChapter(root, chapterRefs.current)
       const start = visibleChapter
         ? findVisibleChapterStart(root, chapterRefs.current, visibleChapter.id)

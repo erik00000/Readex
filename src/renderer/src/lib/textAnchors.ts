@@ -90,14 +90,18 @@ export function clearTextHighlights(root: HTMLElement, annotations: Annotation[]
   }
 }
 
-export function scrollToTextOffset(root: HTMLElement, start: number): void {
+export function scrollToTextOffset(
+  root: HTMLElement,
+  start: number,
+  behavior: ScrollBehavior = 'smooth'
+): void {
   const range = createRangeByOffsets(root, start, Math.min(start + 1, root.textContent?.length ?? start + 1))
   if (!range) return
   const element =
     range.startContainer.nodeType === Node.ELEMENT_NODE
       ? (range.startContainer as Element)
       : range.startContainer.parentElement
-  element?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  element?.scrollIntoView({ block: 'center', behavior })
 }
 
 export function textOffsetAtPoint(root: HTMLElement, x: number, y: number): number | null {

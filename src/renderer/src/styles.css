@@ -1862,8 +1862,6 @@ button:disabled {
 .reader-chapter {
   position: relative;
   scroll-margin-top: 70px;
-  content-visibility: auto;
-  contain-intrinsic-size: 900px;
 }
 
 .reader-chapter + .reader-chapter {

@@ -240,6 +240,17 @@ export function ReaderView({
   }, [flushProgress])
 
   useEffect(() => {
+    // Native window close can unload the renderer before a pending debounce
+    // fires. Flush on the browser lifecycle events as well as React cleanup.
+    window.addEventListener('beforeunload', flushProgress)
+    window.addEventListener('pagehide', flushProgress)
+    return () => {
+      window.removeEventListener('beforeunload', flushProgress)
+      window.removeEventListener('pagehide', flushProgress)
+    }
+  }, [flushProgress])
+
+  useEffect(() => {
     if (!floatingWindow) return
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return

@@ -7,7 +7,7 @@ import {
   useState
 } from 'react'
 import DOMPurify from 'dompurify'
-import type { BookContent, SearchResult, TocItem } from '@shared/types'
+import type { BookContent, ReadingLocator, SearchResult, TocItem } from '@shared/types'
 import type { ReaderHandle, ReaderProps } from './types'
 import type { AutoScrollStatus } from './types'
 import {
@@ -174,7 +174,7 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
         const chapter = resolvedChapterId
           ? chapterRefs.current.get(resolvedChapterId)
           : undefined
-        if (chapter) {
+        if (resolvedChapterId && chapter) {
           const rootRect = scrollRoot.getBoundingClientRect()
           const chapterRect = chapter.getBoundingClientRect()
           const top = scrollRoot.scrollTop + chapterRect.top - rootRect.top
@@ -182,6 +182,20 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
           // intermediate scroll events, and those events can save a transient
           // chapter as the new reading position before the animation finishes.
           scrollRoot.scrollTo({ top, behavior: 'auto' })
+          const max = Math.max(1, scrollRoot.scrollHeight - scrollRoot.clientHeight)
+          const locator: ReadingLocator = {
+            type: format === 'mobi' ? 'mobi-offset' : 'text-offset',
+            value: resolvedChapterId,
+            chapterId: resolvedChapterId,
+            start: start ?? 0
+          }
+
+          // Do not wait for a debounced scroll event here. A user can click a
+          // distant chapter and close the window immediately, before the
+          // browser emits the final scroll event and React unmounts.
+          const nextProgress = Math.max(0, Math.min(1, top / max))
+          onProgress(locator, nextProgress)
+          void window.readex.reading.saveState(book.id, locator, nextProgress)
           if (start !== undefined) {
             window.setTimeout(() => scrollToTextOffset(chapter, start), 0)
           }

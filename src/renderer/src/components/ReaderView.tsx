@@ -15,6 +15,8 @@ import {
   PictureInPicture2,
   Search,
   Settings2,
+  Smartphone,
+  Monitor,
   X
 } from 'lucide-react'
 import type {
@@ -53,6 +55,7 @@ import { ReaderScrollControls } from './ReaderScrollControls'
 import { SelectionContextMenu } from './SelectionContextMenu'
 import { SelectionToolbar } from './SelectionToolbar'
 import { TocPanel } from './TocPanel'
+import { ReadingQuickSettings } from './ReadingQuickSettings'
 
 interface ReaderViewProps {
   book: BookRecord
@@ -68,6 +71,9 @@ interface ReaderViewProps {
   onTtsSettingsChange: (
     patch: Partial<Pick<ReaderSettings, 'ttsVoice' | 'ttsRate' | 'ttsVolume'>>
   ) => void
+  onQuickSettingsChange?: (patch: Partial<ReaderSettings>) => void
+  phoneMode?: boolean
+  onTogglePhoneMode?: () => void
   floatingWindow?: boolean
 }
 
@@ -95,6 +101,9 @@ export function ReaderView({
   onReadingModeChange,
   onAutoScrollSpeedChange,
   onTtsSettingsChange,
+  onQuickSettingsChange,
+  phoneMode = false,
+  onTogglePhoneMode,
   floatingWindow = false
 }: ReaderViewProps): React.JSX.Element {
   const readerRef = useRef<ReaderHandle>(null)
@@ -644,6 +653,9 @@ export function ReaderView({
           <button className="icon-button" type="button" title="阅读设置" onClick={onOpenSettings}>
             <Settings2 size={17} />
           </button>
+          {!floatingWindow && onTogglePhoneMode && <button className="icon-button phone-mode-toggle" type="button"
+            title={phoneMode ? '恢复桌面窗口' : '切换手机窗口'} aria-label={phoneMode ? '恢复桌面窗口' : '切换手机窗口'} aria-pressed={phoneMode}
+            onClick={() => { stopAutoScroll(); stopSpeech(); flushProgress(); onTogglePhoneMode() }}>{phoneMode ? <Monitor size={17}/> : <Smartphone size={17}/>}</button>}
           <button
             className="icon-button"
             type="button"
@@ -662,6 +674,8 @@ export function ReaderView({
           </button>
         </div>
       </header>
+
+      {!floatingWindow && onQuickSettingsChange && <ReadingQuickSettings settings={settings} onChange={(patch) => { stopAutoScroll(); stopSpeech(); flushProgress(); onQuickSettingsChange(patch) }}/> }
 
       <div
         className="reader-workspace"

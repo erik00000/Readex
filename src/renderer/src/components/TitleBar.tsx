@@ -119,6 +119,7 @@ export function TitleBar({
         ))}
       </nav>
 
+      <button className="phone-restore-button no-drag" type="button" title="恢复桌面窗口" onClick={() => void window.readex.windowControl.togglePhoneMode()}>恢复桌面</button>
       <div className="titlebar-spacer" />
 
       {(chapterProgress || (bookProgress !== null && bookProgress !== undefined)) && (

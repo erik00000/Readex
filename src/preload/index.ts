@@ -71,6 +71,7 @@ const api = {
     openExternal: (url: string) => ipcRenderer.invoke('system:open-external', url)
   },
   windowControl: {
+    togglePhoneMode: () => ipcRenderer.invoke('window:toggle-phone-mode'),
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),
     close: () => ipcRenderer.invoke('window:close'),

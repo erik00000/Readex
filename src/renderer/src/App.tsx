@@ -43,10 +43,16 @@ export default function App(): React.JSX.Element {
   const [initialLocator, setInitialLocator] = useState<ReadingLocator | null>(null)
   const [hydrated, setHydrated] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [phoneMode, setPhoneMode] = useState(false)
+
+  useEffect(() => {
+    void window.readex.windowControl.state().then((value) => setPhoneMode(Boolean(value.phoneMode)))
+    return window.readex.windowControl.onStateChange((value) => setPhoneMode(Boolean(value.phoneMode)))
+  }, [])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [infoMode, setInfoMode] = useState<InfoMode | null>(null)
-  const [version, setVersion] = useState('0.1.3')
+  const [version, setVersion] = useState('0.1.5')
   const [importJobs, setImportJobs] = useState<ImportJob[]>([])
   const [importCompleted, setImportCompleted] = useState(0)
   const [importTotal, setImportTotal] = useState(0)
@@ -514,6 +520,7 @@ export default function App(): React.JSX.Element {
     {
       label: '视图',
       items: [
+        { label: phoneMode ? '恢复桌面窗口' : '手机阅读窗口', checked: phoneMode, onSelect: () => { void window.readex.windowControl.togglePhoneMode().then(setPhoneMode) } },
         {
           label: '全部书籍',
           shortcut: 'Ctrl+Shift+B',
@@ -563,7 +570,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <div
-      className="app-shell"
+      className={`app-shell ${phoneMode ? 'phone-reader-mode' : ''}`}
       data-app-theme={settings.reader.theme}
       style={createAppThemeStyle(settings.reader)}
       onDragEnter={(event) => {
@@ -648,6 +655,9 @@ export default function App(): React.JSX.Element {
                 book={activeBook}
                 settings={settings.reader}
                 initialLocator={initialLocator}
+                phoneMode={phoneMode}
+                onTogglePhoneMode={() => { void window.readex.windowControl.togglePhoneMode().then(setPhoneMode) }}
+                onQuickSettingsChange={(patch) => setSettings((current) => ({ ...current, reader: { ...current.reader, ...patch } }))}
                 onBack={() => setView('library')}
                 onOpenSettings={() => setSettingsOpen(true)}
                 onProgress={handleBookProgress}

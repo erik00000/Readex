@@ -207,6 +207,7 @@ export interface ClearProfileResult {
 }
 
 export interface WindowState {
+  phoneMode?: boolean
   maximized: boolean
   fullscreen: boolean
 }

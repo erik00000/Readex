@@ -56,9 +56,13 @@ pnpm build
 ```
 
 
-#### Online Libraries (0.1.4)
+#### Online Libraries (0.1.5)
 
 Open **在线书库** in the sidebar to browse Biquge (`www.biquge.tw`) or ixdzs (`ixdzs8.com`), search, or paste a book link. Books are added to the existing library; the reader loads one chapter at a time with a complete directory, chapter/page buttons, annotations, and saved reading positions. Opened chapters are cached locally. Uncached chapters and directory refreshes require a network connection. If Biquge search returns nothing, a clearly labelled fallback checks homepage recommendations. Online books support adjustable auto-scroll and text-to-speech, automatically continuing to the next chapter. Left/right arrow keys turn pages, including across chapter boundaries. Full-book text search is not currently supported.
+
+#### Phone Window and Quick Appearance (0.1.5)
+
+Click the phone icon in the reading toolbar to resize the current window to a compact portrait layout. Click the desktop icon or “恢复桌面” to restore its previous bounds. The reading appearance bar offers six backgrounds (white, green, blue, pink, gray, beige) and five text sizes (14, 16, 18, 22, 26 px). Choices are saved locally. PDF text uses the existing PDF zoom control.
 
 #### Import and Read
 
@@ -176,7 +180,7 @@ Readex 采用 PolyForm Noncommercial License 1.0.0 进行源码公开。允许�
 - [LINUX DO](https://linux.do/)：友情链接。
 
 
-### 在线书库（0.1.4）
+### 在线书库（0.1.5）
 
 左侧选择“在线书库”，可切换笔趣阁（`www.biquge.tw`）和爱下电子书（`ixdzs8.com`）。支持首页推荐、书名/作者搜索，以及直接粘贴书籍详情、目录或章节链接。点击“加入书库并阅读”后，书籍会进入“全部书籍”。
 
@@ -191,6 +195,12 @@ Readex 采用 PolyForm Noncommercial License 1.0.0 进行源码公开。允许�
 ### 标注与笔记
 
 选中正文后可使用浮动工具或右键菜单添加四色高亮、评论、复制和书签。笔记编辑器使用 `Enter` 保存，`Ctrl+Enter` 或 `Shift+Enter` 换行。
+
+### 手机窗口与快捷外观（0.1.5）
+
+点击阅读工具栏的手机图标，将当前窗口切换为约 430 × 820 的竖屏阅读窗口，隐藏侧栏。再次点击桌面图标或顶部“恢复桌面”，恢复原来的窗口尺寸与最大化状态。阅读位置沿用当前章节。
+
+阅读区上方提供与示例一致的白、绿、蓝、粉、灰、米色背景，以及超小、小、中、大、超大五档字号（14、16、18、22、26px），点选即生效并保存。文字字号适用于 TXT、MOBI、EPUB 和在线章节；PDF 使用显示设置中的 PDF 缩放。
 
 ### 自动滚动与听书
 

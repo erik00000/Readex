@@ -31,6 +31,7 @@ export const OnlineReader = forwardRef<ReaderHandle, ReaderProps>(function Onlin
   const attempted = useRef<string | null>(null)
   const lastSaved = useRef<ReadingLocator | null>(null)
   const busy = useRef(true)
+  const previousTypography = useRef({ fontSize: settings.fontSize, fontFamily: settings.fontFamily, lineHeight: settings.lineHeight, contentWidth: settings.contentWidth, letterSpacing: settings.letterSpacing })
   const autoRunning = useRef(false)
   const autoController = useRef<AutoScrollController | null>(null)
   const autoNextTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -276,6 +277,32 @@ export const OnlineReader = forwardRef<ReaderHandle, ReaderProps>(function Onlin
     root.addEventListener('wheel', wheel, { passive: false })
     return () => root.removeEventListener('wheel', wheel)
   }, [loading])
+
+  // Preserve the chapter position when the same reader is resized into a phone
+  // window or its type size changes; this never runs on ordinary scroll events.
+  const preserveLayoutPosition = (): void => {
+    const root = rootRef.current, saved = lastSaved.current
+    if (!root || !saved || busy.current || restoring.current || saved.chapterId !== state.current.chapter?.id || typeof saved.chapterProgress !== 'number') return
+    root.scrollTop = Math.max(0, root.scrollHeight - root.clientHeight) * saved.chapterProgress
+    capture()
+  }
+  useLayoutEffect(() => {
+    const next = { fontSize: settings.fontSize, fontFamily: settings.fontFamily, lineHeight: settings.lineHeight, contentWidth: settings.contentWidth, letterSpacing: settings.letterSpacing }
+    if (JSON.stringify(next) !== JSON.stringify(previousTypography.current)) preserveLayoutPosition()
+    previousTypography.current = next
+  }, [settings.fontSize, settings.fontFamily, settings.lineHeight, settings.contentWidth, settings.letterSpacing])
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || typeof ResizeObserver === 'undefined') return
+    let width = root.clientWidth, height = root.clientHeight
+    const observer = new ResizeObserver(() => {
+      if (width === root.clientWidth && height === root.clientHeight) return
+      width = root.clientWidth; height = root.clientHeight
+      preserveLayoutPosition()
+    })
+    observer.observe(root)
+    return () => observer.disconnect()
+  }, [])
 
   const refresh = async (): Promise<void> => {
     setRefreshing(true); setError('')

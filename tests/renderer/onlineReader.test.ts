@@ -14,10 +14,16 @@ let host: HTMLDivElement
 let ref: ReturnType<typeof createRef<ReaderHandle>>
 let props: ReaderProps
 let chapterRequest: ReturnType<typeof vi.fn>
+let notifyResize: () => void
 
 beforeEach(async () => {
   vi.useFakeTimers()
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(callback: () => void) { notifyResize = callback }
+    observe(): void {}
+    disconnect(): void {}
+  })
   Object.defineProperty(document, 'fonts', { configurable: true, value: { ready: Promise.resolve() } })
   Object.defineProperty(document, 'caretRangeFromPoint', { configurable: true, value: () => null })
   Object.defineProperty(Range.prototype, 'getBoundingClientRect', { configurable: true, value: () => ({ top: 10, bottom: 35, height: 25, left: 0, width: 300 }) })
@@ -39,6 +45,28 @@ afterEach(async () => {
 const scroll = () => host.querySelector<HTMLElement>('.online-reader-scroll')!
 
 describe('online automatic reading and page navigation', () => {
+
+  it('preserves progress on a window resize without correcting ordinary scrolling', async () => {
+    scroll().scrollTop = 480
+    await act(async () => { scroll().dispatchEvent(new Event('scroll')); await vi.advanceTimersByTimeAsync(200) })
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(400)
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(2800)
+    await act(async () => { notifyResize() })
+    expect(scroll().scrollTop).toBe(960)
+    scroll().scrollTop = 1100
+    await act(async () => { notifyResize() })
+    expect(scroll().scrollTop).toBe(1100)
+  })
+
+  it('preserves chapter progress when a larger font increases the content height', async () => {
+    scroll().scrollTop = 600
+    await act(async () => { scroll().dispatchEvent(new Event('scroll')); await vi.advanceTimersByTimeAsync(200) })
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(3000)
+    await act(async () => { root.render(createElement(OnlineReader, { ...props, settings: { ...props.settings, fontSize: 26 }, ref })) })
+    expect(scroll().scrollTop).toBe(1200)
+    expect(chapterRequest).toHaveBeenCalledTimes(1)
+  })
+
   it('turns a full page in continuous mode and crosses chapters at their boundaries', async () => {
     await act(async () => { ref.current!.turnPage!(1) })
     expect(scroll().scrollTop).toBe(528)

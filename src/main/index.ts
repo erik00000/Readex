@@ -37,6 +37,8 @@ const onlineLibrary = new OnlineLibrary(storage, fetchOnlineHtml)
 const annotationIndex = new AnnotationIndex(storage)
 const speechSynthesis = new SpeechSynthesisService(storage)
 let mainWindow: BrowserWindow | null = null
+let phoneMode = false
+let desktopWindow: { bounds: Electron.Rectangle; maximized: boolean; fullscreen: boolean } | null = null
 let floatingWindow: BrowserWindow | null = null
 let floatingBookId: string | null = null
 let restoreMainAfterFloatingCloses = true
@@ -202,12 +204,14 @@ async function createWindow(): Promise<void> {
 
   mainWindow.on('maximize', () => sendWindowState())
   mainWindow.on('unmaximize', () => sendWindowState())
+  mainWindow.on('resize', () => sendWindowState())
   mainWindow.on('enter-full-screen', () => sendWindowState())
   mainWindow.on('leave-full-screen', () => sendWindowState())
   mainWindow.on('closed', () => {
     const timer = rendererRecoveryTimers.get(mainWindow as BrowserWindow)
     if (timer) clearTimeout(timer)
     mainWindow = null
+    phoneMode = false; desktopWindow = null
     if (floatingWindow) disposeFloatingReader()
   })
 
@@ -310,6 +314,7 @@ function hideFloatingReader(): void {
 function sendWindowState(): void {
   if (!mainWindow) return
   mainWindow.webContents.send('window:state', {
+    phoneMode,
     maximized: mainWindow.isMaximized(),
     fullscreen: mainWindow.isFullScreen()
   })
@@ -457,6 +462,34 @@ function registerIpc(): void {
     return Promise.resolve()
   })
 
+  ipcMain.handle('window:toggle-phone-mode', (event) => {
+    if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return false
+    if (!phoneMode) {
+      desktopWindow = { bounds: mainWindow.getNormalBounds(), maximized: mainWindow.isMaximized(), fullscreen: mainWindow.isFullScreen() }
+      const work = screen.getDisplayMatching(mainWindow.getBounds()).workArea
+      phoneMode = true
+      if (mainWindow.isFullScreen()) mainWindow.setFullScreen(false)
+      if (mainWindow.isMaximized()) mainWindow.unmaximize()
+      mainWindow.setMinimumSize(360, 560)
+      const width = Math.min(430, work.width), height = Math.min(820, work.height - 24)
+      mainWindow.setBounds({ x: Math.round(work.x + (work.width - width) / 2), y: Math.round(work.y + (work.height - height) / 2), width, height })
+    } else {
+      phoneMode = false
+      if (mainWindow.isFullScreen()) mainWindow.setFullScreen(false)
+      mainWindow.setMinimumSize(980, 660)
+      if (mainWindow.isMaximized()) mainWindow.unmaximize()
+      if (desktopWindow) {
+        const work = screen.getDisplayMatching(desktopWindow.bounds).workArea
+        const width = Math.min(desktopWindow.bounds.width, work.width), height = Math.min(desktopWindow.bounds.height, work.height)
+        mainWindow.setBounds({ width, height, x: Math.max(work.x, Math.min(desktopWindow.bounds.x, work.x + work.width - width)), y: Math.max(work.y, Math.min(desktopWindow.bounds.y, work.y + work.height - height)) })
+        if (desktopWindow.maximized) mainWindow.maximize()
+        if (desktopWindow.fullscreen) mainWindow.setFullScreen(true)
+      }
+      desktopWindow = null
+    }
+    sendWindowState()
+    return phoneMode
+  })
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
   ipcMain.handle('window:maximize', () => {
     if (!mainWindow) return
@@ -509,6 +542,7 @@ function registerIpc(): void {
     if (floatingDrag?.webContentsId === event.sender.id) floatingDrag = null
   })
   ipcMain.handle('window:state', () => ({
+    phoneMode,
     maximized: mainWindow?.isMaximized() ?? false,
     fullscreen: mainWindow?.isFullScreen() ?? false
   }))

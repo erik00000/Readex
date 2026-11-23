@@ -76,6 +76,7 @@ export interface ReadexApi {
     openExternal: (url: string) => Promise<void>
   }
   windowControl: {
+    togglePhoneMode: () => Promise<boolean>
     minimize: () => Promise<void>
     maximize: () => Promise<void>
     close: () => Promise<void>

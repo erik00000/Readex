@@ -33,8 +33,8 @@ importers:
         specifier: ^3.10.1
         version: 3.10.2
       node-edge-tts:
-        specifier: 1.2.10
-        version: 1.2.10(supports-color@7.2.0)
+        specifier: 1.2.12
+        version: 1.2.12(supports-color@7.2.0)
     devDependencies:
       '@types/archiver':
         specifier: ^6.0.3
@@ -1788,8 +1788,8 @@ packages:
   node-api-version@0.2.1:
     resolution: {integrity: sha512-2xP/IGGMmmSQpI1+O/k72jF/ykvZ89JeuKX3TLJAYPDVLUalrshrLHkeVcCCZqG/eEa635cr8IBYzgnDvM2O8Q==}
 
-  node-edge-tts@1.2.10:
-    resolution: {integrity: sha512-bV2i4XU54D45+US0Zm1HcJRkifuB3W438dWyuJEHLQdKxnuqlI1kim2MOvR6Q3XUQZvfF9PoDyR1Rt7aeXhPdQ==}
+  node-edge-tts@1.2.12:
+    resolution: {integrity: sha512-tvopsQ+XkxHGHM58GUVDM7iwzxVivjqSJb948xg2F0q9r+OWO7bSrJkHnJ0e7BPTxhPiTrxK+9zsl4CL5H5KbQ==}
     hasBin: true
 
   node-gyp@12.4.0:
@@ -4279,7 +4279,7 @@ snapshots:
     dependencies:
       semver: 7.8.5
 
-  node-edge-tts@1.2.10(supports-color@7.2.0):
+  node-edge-tts@1.2.12(supports-color@7.2.0):
     dependencies:
       https-proxy-agent: 7.0.6(supports-color@7.2.0)
       ws: 8.21.3

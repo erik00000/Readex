@@ -297,6 +297,7 @@ export function ReaderView({
         setMessage(command === 'previous-chapter' ? '已经是第一章' : '已经是最后一章')
         return
       }
+      stopAutoScroll(); stopSpeech()
       setActiveTocId(item.id)
       readerRef.current?.goTo(item)
     }
@@ -379,13 +380,10 @@ export function ReaderView({
       }
       onProgress(book.id, locator, progress)
       if (!locator.value.trim()) return
-      if (progressTimer.current) window.clearTimeout(progressTimer.current)
-      progressTimer.current = window.setTimeout(() => {
-        progressTimer.current = null
-        void window.readex.reading.saveState(book.id, locator, progress)
-      }, 250)
+      if (progressTimer.current) return
+      progressTimer.current = window.setTimeout(flushProgress, 250)
     },
-    [book.id, onProgress, toc]
+    [book.id, onProgress, toc, flushProgress]
   )
 
   const onSelection = useCallback((value: SelectedText): void => {
@@ -412,7 +410,23 @@ export function ReaderView({
   const onReaderInteraction = useCallback((): void => {
     closeSelectionMenu()
     stopAutoScroll()
-  }, [closeSelectionMenu, stopAutoScroll])
+    stopSpeech()
+  }, [closeSelectionMenu, stopAutoScroll, stopSpeech])
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.isComposing) return
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      const target = event.target instanceof Element ? event.target : null
+      if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="menu"], [role="listbox"]')) return
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], .selection-context-menu')) return
+      event.preventDefault()
+      onReaderInteraction()
+      readerRef.current?.turnPage?.(event.key === 'ArrowLeft' ? -1 : 1)
+    }
+    window.addEventListener('keydown', keydown)
+    return () => window.removeEventListener('keydown', keydown)
+  }, [onReaderInteraction])
 
   const onOpenAnnotation = useCallback(
     (annotation: Annotation): void => {
@@ -672,8 +686,6 @@ export function ReaderView({
             autoScrollSpeed={settings.autoScrollSpeed}
             onToggleAutoScroll={toggleAutoScroll}
             onAutoScrollSpeedChange={onAutoScrollSpeedChange}
-            showSpeech={!book.online}
-            showAutoScroll={!book.online}
             speechState={speechState}
             speechVoice={settings.ttsVoice}
             speechRate={settings.ttsRate}
@@ -736,6 +748,7 @@ export function ReaderView({
                 items={toc}
                 activeId={activeTocId}
                 onSelect={(item) => {
+                  onReaderInteraction()
                   setActiveTocId(item.id)
                   readerRef.current?.goTo(item)
                 }}

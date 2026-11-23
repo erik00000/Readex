@@ -56,9 +56,9 @@ pnpm build
 ```
 
 
-#### Online Libraries (0.1.3)
+#### Online Libraries (0.1.4)
 
-Open **在线书库** in the sidebar to browse Biquge (`www.biquge.tw`) or ixdzs (`ixdzs8.com`), search, or paste a book link. Books are added to the existing library; the reader loads one chapter at a time with a complete directory, chapter/page buttons, annotations, and saved reading positions. Opened chapters are cached locally. Uncached chapters and directory refreshes require a network connection. If Biquge search returns nothing, a clearly labelled fallback checks homepage recommendations. Online books do not currently support full-book text search, auto-scroll, or speech.
+Open **在线书库** in the sidebar to browse Biquge (`www.biquge.tw`) or ixdzs (`ixdzs8.com`), search, or paste a book link. Books are added to the existing library; the reader loads one chapter at a time with a complete directory, chapter/page buttons, annotations, and saved reading positions. Opened chapters are cached locally. Uncached chapters and directory refreshes require a network connection. If Biquge search returns nothing, a clearly labelled fallback checks homepage recommendations. Online books support adjustable auto-scroll and text-to-speech, automatically continuing to the next chapter. Left/right arrow keys turn pages, including across chapter boundaries. Full-book text search is not currently supported.
 
 #### Import and Read
 
@@ -176,13 +176,13 @@ Readex 采用 PolyForm Noncommercial License 1.0.0 进行源码公开。允许�
 - [LINUX DO](https://linux.do/)：友情链接。
 
 
-### 在线书库（0.1.3）
+### 在线书库（0.1.4）
 
 左侧选择“在线书库”，可切换笔趣阁（`www.biquge.tw`）和爱下电子书（`ixdzs8.com`）。支持首页推荐、书名/作者搜索，以及直接粘贴书籍详情、目录或章节链接。点击“加入书库并阅读”后，书籍会进入“全部书籍”。
 
 在线阅读只加载当前章节，支持完整目录直接跳章、上一章/下一章、上一页/下一页、阅读设置、标注及重启后恢复阅读位置。“刷新目录”可以取得新增章节。已打开过的章节缓存在 `data/cache/parsed/<book-id>/online`，断网时仍可阅读缓存；未缓存章节需要联网。
 
-笔趣阁原站搜索有时会返回空结果，此时会明确提示，并在首页推荐中查找匹配项；也可以直接粘贴链接。网站不可用、目录变化或请求超时会显示错误和重试入口。在线书籍暂不支持全书正文搜索、自动滚动和听书。
+笔趣阁原站搜索有时会返回空结果，此时会明确提示，并在首页推荐中查找匹配项；也可以直接粘贴链接。网站不可用、目录变化或请求超时会显示错误和重试入口。在线书籍支持调速自动滚动和听书，并会继续下一章。使用 ← / → 键可翻到上一页 / 下一页，章首章末可跨章。暂不支持全书正文搜索。
 
 ### 导入与阅读
 
@@ -194,7 +194,7 @@ Readex 采用 PolyForm Noncommercial License 1.0.0 进行源码公开。允许�
 
 ### 自动滚动与听书
 
-阅读区右侧提供精细滚动、自动滚动和听书控件。自动滚动支持 1 至 100 级速度和颜色提示；听书支持 TXT、MOBI/KF8、EPUB，并从当前视口第一句开始。PDF 和扫描版 OCR 暂不支持听书。
+阅读区右侧提供精细滚动、自动滚动和听书控件。自动滚动支持 1 至 100 级速度和颜色提示；听书支持 TXT、MOBI/KF8、EPUB 和在线章节，并从当前视口第一句开始。PDF 和扫描版 OCR 暂不支持听书。
 
 ### 浮框阅读
 

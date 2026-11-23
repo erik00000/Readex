@@ -461,12 +461,12 @@ export const EpubReader = forwardRef<ReaderHandle, ReaderProps>(function EpubRea
     return results
   }
 
-  const scrollBy = (delta: number): void => {
+  const scrollBy = (delta: number, forcePage = false): void => {
     const container = mountRef.current?.querySelector('.epub-container') as HTMLElement | null
     if (container) {
       onReaderPointerDown()
       const current = settingsRef.current
-      if (current.readingMode === 'paged') {
+      if (forcePage || current.readingMode === 'paged') {
         const page = Math.max(1, Math.floor(container.clientHeight * 0.88))
         const max = Math.max(0, container.scrollHeight - container.clientHeight)
         container.scrollTo({
@@ -610,6 +610,7 @@ export const EpubReader = forwardRef<ReaderHandle, ReaderProps>(function EpubRea
   useImperativeHandle(ref, () => ({
     goTo,
     scrollBy,
+    turnPage: (direction) => scrollBy(direction, true),
     search,
     startAutoScroll,
     stopAutoScroll,
@@ -642,6 +643,10 @@ function getContainerProgress(mount: HTMLElement | null): number {
 }
 
 function isReadexShortcut(event: KeyboardEvent): boolean {
+  if (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    const target = event.target as HTMLElement | null
+    return !target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  }
   if (event.key === 'F11') return true
   if (event.key === 'Escape') return true
   if (!event.ctrlKey && !event.metaKey) return false

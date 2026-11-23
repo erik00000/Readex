@@ -283,13 +283,13 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
       return window.readex.search.inBook(book.id, query)
     }
 
-    const scrollBy = (delta: number): void => {
+    const scrollBy = (delta: number, forcePage = false): void => {
       const root = scrollRef.current
       if (root) {
         navigationTarget.current?.timers.forEach((timer) => window.clearTimeout(timer))
         navigationTarget.current = null
         const current = settingsRef.current
-        if (current.readingMode === 'paged') {
+        if (forcePage || current.readingMode === 'paged') {
           const page = Math.max(1, Math.floor(root.clientHeight * 0.88))
           const max = Math.max(0, root.scrollHeight - root.clientHeight)
           root.scrollTo({
@@ -385,6 +385,7 @@ export const TextFlowReader = forwardRef<ReaderHandle, TextFlowReaderProps>(
     useImperativeHandle(ref, () => ({
       goTo,
       scrollBy,
+      turnPage: (direction) => scrollBy(direction, true),
       search,
       startAutoScroll,
       stopAutoScroll,

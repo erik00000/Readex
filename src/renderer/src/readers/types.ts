@@ -32,6 +32,7 @@ export interface FloatingDragHandlers {
 export interface ReaderHandle {
   goTo: (target: ReadingLocator | TocItem) => void
   scrollBy: (delta: number) => void
+  turnPage?: (direction: -1 | 1) => void
   search: (query: string) => Promise<SearchResult[]>
   /** Begin continuous auto-scroll; returns whether it could start. */
   startAutoScroll: () => AutoScrollStatus

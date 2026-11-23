@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { normalizedWheelDelta } from '../../src/renderer/src/lib/smoothScroll'
+import { describe, expect, it, vi } from 'vitest'
+import { normalizedWheelDelta, smoothScrollBy } from '../../src/renderer/src/lib/smoothScroll'
 
 describe('fine wheel scrolling', () => {
   it('caps a standard mouse wheel event at the configured step', () => {
@@ -15,4 +15,20 @@ describe('fine wheel scrolling', () => {
   it('normalizes line-based wheel events', () => {
     expect(normalizedWheelDelta(3, 1, 48, 800)).toBe(22.68)
   })
+})
+
+
+it('cancels an outstanding smooth movement before an immediate page turn', () => {
+  const scheduled = new Map<number, FrameRequestCallback>()
+  let sequence = 0
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { scheduled.set(++sequence, callback); return sequence })
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => scheduled.delete(id))
+  try {
+    const root = { scrollTop: 100, scrollHeight: 3000, clientHeight: 600 } as HTMLElement
+    smoothScrollBy(root, 100, true)
+    expect(scheduled.size).toBe(1)
+    smoothScrollBy(root, 528, false)
+    expect(scheduled.size).toBe(0)
+    expect(root.scrollTop).toBe(628)
+  } finally { vi.unstubAllGlobals() }
 })

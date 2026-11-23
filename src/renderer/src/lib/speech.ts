@@ -218,6 +218,7 @@ export class SpeechPlaybackController {
     if (!snapshot || !reader) return
 
     if (this.segmentIndex >= snapshot.segments.length) {
+      this.setState('loading')
       const advanced = await reader.advanceSpeechSection()
       if (session !== this.session || this.disposed) return
       const nextSnapshot = advanced ? reader.getSpeechSnapshot() : null

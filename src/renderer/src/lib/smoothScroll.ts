@@ -27,13 +27,13 @@ export function smoothScrollBy(
   duration = 110
 ): void {
   const max = Math.max(0, element.scrollHeight - element.clientHeight)
+  const current = animations.get(element)
+  if (current) { cancelAnimationFrame(current.frame); animations.delete(element) }
   if (!smooth || Math.abs(delta) < 1) {
     element.scrollTop = clamp(element.scrollTop + delta, 0, max)
     return
   }
 
-  const current = animations.get(element)
-  if (current) cancelAnimationFrame(current.frame)
   const start = element.scrollTop
   const target = clamp((current?.target ?? start) + delta, 0, max)
   const startedAt = performance.now()

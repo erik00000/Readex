@@ -254,11 +254,11 @@ export const PdfReader = forwardRef<ReaderHandle, ReaderProps>(function PdfReade
     return results
   }
 
-  const scrollBy = (delta: number): void => {
+  const scrollBy = (delta: number, forcePage = false): void => {
     const root = scrollRef.current
     if (!root) return
     const current = settingsRef.current
-    if (current.readingMode === 'paged') {
+    if (forcePage || current.readingMode === 'paged') {
       const page = Math.max(1, Math.floor(root.clientHeight * 0.88))
       const max = Math.max(0, root.scrollHeight - root.clientHeight)
       root.scrollTo({
@@ -326,6 +326,7 @@ export const PdfReader = forwardRef<ReaderHandle, ReaderProps>(function PdfReade
   useImperativeHandle(ref, () => ({
     goTo,
     scrollBy,
+    turnPage: (direction) => scrollBy(direction, true),
     search,
     startAutoScroll,
     stopAutoScroll,

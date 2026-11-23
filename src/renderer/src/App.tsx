@@ -14,6 +14,7 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { ImportOverlay } from './components/ImportOverlay'
 import { InfoDialog } from './components/InfoDialog'
 import { LibraryView } from './components/LibraryView'
+import { OnlineLibraryView } from './components/OnlineLibraryView'
 import { NotesDashboard } from './components/NotesDashboard'
 import { ProfileDialog } from './components/ProfileDialog'
 import { SettingsDialog } from './components/SettingsDialog'
@@ -27,7 +28,7 @@ const ReaderView = lazy(() =>
   import('./components/ReaderView').then((module) => ({ default: module.ReaderView }))
 )
 
-type View = 'library' | 'notes' | 'book'
+type View = 'library' | 'notes' | 'book' | 'online'
 type InfoMode = 'shortcuts' | 'about' | 'licenses'
 
 export default function App(): React.JSX.Element {
@@ -45,7 +46,7 @@ export default function App(): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [infoMode, setInfoMode] = useState<InfoMode | null>(null)
-  const [version, setVersion] = useState('0.1.2')
+  const [version, setVersion] = useState('0.1.3')
   const [importJobs, setImportJobs] = useState<ImportJob[]>([])
   const [importCompleted, setImportCompleted] = useState(0)
   const [importTotal, setImportTotal] = useState(0)
@@ -603,6 +604,7 @@ export default function App(): React.JSX.Element {
           activeBookId={activeBookId}
           currentView={view}
           onToggle={() => setSidebarCollapsed((value) => !value)}
+          onOpenOnline={() => setView('online')}
           onOpenLibrary={() => setView('library')}
           onOpenBook={openBook}
           onCloseWorkspace={closeWorkspace}
@@ -624,6 +626,7 @@ export default function App(): React.JSX.Element {
               onRemove={setRemoveTarget}
             />
           )}
+          {view === 'online' && <OnlineLibraryView onOpen={openBook} onLibraryChanged={refreshLibrary} />}
           {view === 'notes' && (
             <NotesDashboard
               books={library.books}

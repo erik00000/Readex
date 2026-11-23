@@ -1,5 +1,9 @@
 import type {
   Annotation,
+  OnlineSourceId,
+  OnlineDiscovery,
+  OnlineCatalog,
+  OnlineChapter,
   AppSettings,
   BackupResult,
   BookContent,
@@ -19,6 +23,12 @@ import type {
 import type { TtsSynthesisRequest, TtsSynthesisResult } from './speech'
 
 export interface ReadexApi {
+  online: {
+    discover: (source: OnlineSourceId, query: string) => Promise<OnlineDiscovery>
+    add: (url: string) => Promise<BookRecord>
+    catalog: (bookId: string, refresh?: boolean) => Promise<OnlineCatalog>
+    chapter: (bookId: string, chapterId: string) => Promise<OnlineChapter>
+  }
   library: {
     list: () => Promise<LibraryData>
     chooseAndImport: () => Promise<ImportBatchResult | null>

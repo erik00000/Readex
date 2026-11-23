@@ -44,6 +44,8 @@ import { useFloatingWindowDrag } from '../lib/floatingDrag'
 import { EpubReader } from '../readers/EpubReader'
 import { PdfReader } from '../readers/PdfReader'
 import { TextFlowReader } from '../readers/TextFlowReader'
+import { OnlineReader } from '../readers/OnlineReader'
+import { onlineSourceName } from '@shared/online'
 import type { ReaderHandle } from '../readers/types'
 import { NotesPanel } from './NotesPanel'
 import { NotesHoverCard } from './NotesHoverCard'
@@ -533,6 +535,7 @@ export function ReaderView({
       onAutoScrollEnd: handleAutoScrollEnd,
       floatingDragHandlers: floatingWindow ? floatingDrag : undefined
     }
+    if (book.online) return <OnlineReader key={book.id} ref={readerRef} {...common} />
     if (book.format === 'epub') return <EpubReader ref={readerRef} {...common} />
     if (book.format === 'pdf') return <PdfReader ref={readerRef} {...common} />
     return <TextFlowReader ref={readerRef} {...common} format={book.format} />
@@ -669,6 +672,8 @@ export function ReaderView({
             autoScrollSpeed={settings.autoScrollSpeed}
             onToggleAutoScroll={toggleAutoScroll}
             onAutoScrollSpeedChange={onAutoScrollSpeedChange}
+            showSpeech={!book.online}
+            showAutoScroll={!book.online}
             speechState={speechState}
             speechVoice={settings.ttsVoice}
             speechRate={settings.ttsRate}
@@ -752,7 +757,7 @@ export function ReaderView({
       </div>
 
       <footer className="reader-statusbar">
-        <span>{book.format.toUpperCase()}</span>
+        <span>{book.online ? onlineSourceName(book.online.source) : book.format.toUpperCase()}</span>
         <span className="status-separator" />
         <span>{annotations.length} 条标注</span>
         <span className="status-spacer" />

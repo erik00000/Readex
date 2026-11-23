@@ -5,6 +5,7 @@ import {
   ChevronRight,
   FilePlus2,
   Library,
+  Globe,
   NotebookPen,
   Settings,
   ShieldCheck,
@@ -19,9 +20,10 @@ interface SidebarProps {
   books: BookRecord[]
   workspaceIds: string[]
   activeBookId: string | null
-  currentView: 'library' | 'notes' | 'book'
+  currentView: 'library' | 'notes' | 'book' | 'online'
   onToggle: () => void
   onOpenLibrary: () => void
+  onOpenOnline: () => void
   onOpenBook: (bookId: string) => void
   onCloseWorkspace: (bookId: string) => void
   onOpenNotes: () => void
@@ -38,6 +40,7 @@ export function Sidebar({
   currentView,
   onToggle,
   onOpenLibrary,
+  onOpenOnline,
   onOpenBook,
   onCloseWorkspace,
   onOpenNotes,
@@ -71,6 +74,7 @@ export function Sidebar({
         >
           <Library size={18} />
         </button>
+        <button className={`sidebar-rail-button ${currentView === 'online' ? 'active' : ''}`} type="button" title="在线书库" onClick={onOpenOnline}><Globe size={18}/></button>
         <div className="rail-divider" />
         {workspaceBooks.slice(0, 8).map((book) => (
           <button
@@ -113,6 +117,7 @@ export function Sidebar({
       </div>
 
       <nav className="sidebar-nav">
+        <button className={`sidebar-entry ${currentView === 'online' ? 'active' : ''}`} type="button" onClick={onOpenOnline}><Globe size={16}/><span>在线书库</span></button>
         <button
           className={`sidebar-entry ${currentView === 'library' ? 'active' : ''}`}
           type="button"
@@ -160,7 +165,7 @@ export function Sidebar({
                 <span className="workspace-copy">
                   <strong>{book.title}</strong>
                   <span>
-                    {bookFormatLabel(book.format)} · {formatPercent(book.progress)}
+                    {book.online ? '在线' : bookFormatLabel(book.format)} · {formatPercent(book.progress)}
                   </span>
                 </span>
               </button>

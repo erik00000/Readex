@@ -71,7 +71,7 @@ export function LibraryView({
           <h1>全部书籍</h1>
           <p className="library-subtitle">
             {books.length
-              ? `${books.length} 本书保存在 data/personal，完整离线可用`
+              ? `${books.length} 本书 · 本地书籍离线可读，在线书籍按章缓存`
               : '导入 EPUB、MOBI、PDF 或 TXT 开始阅读'}
           </p>
         </div>
@@ -126,7 +126,7 @@ export function LibraryView({
                       <strong>{book.title.slice(0, 24)}</strong>
                     </div>
                   )}
-                  <span className="format-badge">{bookFormatLabel(book.format)}</span>
+                  <span className="format-badge">{book.online ? '在线' : bookFormatLabel(book.format)}</span>
                 </div>
                 <div className="book-card-copy">
                   <h2 title={book.title}>{book.title}</h2>
@@ -143,7 +143,7 @@ export function LibraryView({
               <div className="book-actions">
                 <button
                   type="button"
-                  title="在资源管理器中显示"
+                  title={book.online ? '打开书籍原站' : '在资源管理器中显示'}
                   onClick={() => onReveal(book.id)}
                 >
                   <FolderSearch size={15} />

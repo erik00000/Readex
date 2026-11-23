@@ -30,6 +30,7 @@ export interface BookRecord extends BookMetadata {
   sha256: string
   coverDataUrl?: string
   progress: number
+  online?: { source: OnlineSourceId; url: string }
   lastLocation?: ReadingLocator
 }
 
@@ -90,6 +91,8 @@ export interface ReadingLocator {
   value: string
   chapterId?: string
   chapterHref?: string
+  /** Relative position within an online chapter. */
+  chapterProgress?: number
   page?: number
   start?: number
   end?: number
@@ -336,4 +339,36 @@ export const ANNOTATION_COLORS: Record<AnnotationColor, string> = {
   green: '#57b894',
   blue: '#5b9cf6',
   pink: '#e978a8'
+}
+
+export type OnlineSourceId = 'biquge' | 'ixdzs'
+
+export interface OnlineBookPreview {
+  source: OnlineSourceId
+  url: string
+  title: string
+  author: string
+  description?: string
+}
+
+export interface OnlineChapterLink {
+  id: string
+  label: string
+  url: string
+}
+
+export interface OnlineCatalog {
+  book: OnlineBookPreview
+  chapters: OnlineChapterLink[]
+  updatedAt: string
+}
+
+export interface OnlineChapter extends NormalizedChapter {
+  url: string
+  cached: boolean
+}
+
+export interface OnlineDiscovery {
+  books: OnlineBookPreview[]
+  notice?: string
 }

@@ -19,7 +19,7 @@
 
 ## English
 
-Readex is a local-first ebook reader for Windows. It requires no sign-in and does not include accounts or cloud sync. Books, workspaces, reading progress, settings, highlights, annotations, and bookmarks are stored in the `data/personal` directory next to the application. Except for online text-to-speech, the core reading workflow works offline. Readex supports DRM-free EPUB, MOBI/KF8, text-based PDF, and TXT files, with highlights, notes, bookmarks, auto-scroll, and text-to-speech.
+Readex is a local-first ebook reader for Windows. It requires no sign-in and does not include accounts or cloud sync. Books, workspaces, reading progress, settings, highlights, annotations, and bookmarks are stored in the `data/personal` directory next to the application. Local books work offline. Optional online libraries and text-to-speech require network access. Readex supports DRM-free EPUB, MOBI/KF8, text-based PDF, and TXT files, with highlights, notes, bookmarks, auto-scroll, and text-to-speech.
 
 Author: Xiaoyao.Hao
 
@@ -55,6 +55,10 @@ pnpm test
 pnpm build
 ```
 
+
+#### Online Libraries (0.1.3)
+
+Open **在线书库** in the sidebar to browse Biquge (`www.biquge.tw`) or ixdzs (`ixdzs8.com`), search, or paste a book link. Books are added to the existing library; the reader loads one chapter at a time with a complete directory, chapter/page buttons, annotations, and saved reading positions. Opened chapters are cached locally. Uncached chapters and directory refreshes require a network connection. If Biquge search returns nothing, a clearly labelled fallback checks homepage recommendations. Online books do not currently support full-book text search, auto-scroll, or speech.
 
 #### Import and Read
 
@@ -96,7 +100,7 @@ data/
     tts/
 ```
 
-Core reading data is stored only on the local machine. When online text-to-speech is enabled, the sentence currently being synthesized is sent to the Microsoft Edge online speech service. Book files, notes, and the complete library are not uploaded. Packaged renderer windows block HTTP, HTTPS, and WebSocket requests by default; network access is performed only by the main-process text-to-speech service.
+Core reading data is stored only on the local machine. When online text-to-speech is enabled, the sentence currently being synthesized is sent to the Microsoft Edge online speech service. Book files, notes, and the complete library are not uploaded. Packaged renderer windows block HTTP, HTTPS, and WebSocket requests by default; online library requests use a separate Chromium session that follows the system proxy and allows only the configured providers. Online text-to-speech is handled by the main process.
 
 ### Packaging
 
@@ -142,7 +146,7 @@ Readex is source-available under the PolyForm Noncommercial License 1.0.0. You m
 
 ## 简体中文
 
-Readex 是一个面向 Windows 的本地优先电子书阅读器。应用不登录、不接入账号或云同步；图书、工作区、阅读进度、设置、高亮、批注和书签都保存在程序旁的 `data/personal` 目录。除在线听书外，核心阅读流程可以离线使用。支持无 DRM 的 EPUB、MOBI/KF8、文本型 PDF 和 TXT，并提供高亮、笔记、书签、自动滚动与听书等完整阅读能力。
+Readex 是一个面向 Windows 的本地优先电子书阅读器。应用不登录、不接入账号或云同步；图书、工作区、阅读进度、设置、高亮、批注和书签都保存在程序旁的 `data/personal` 目录。本地书籍可以离线阅读；在线书库与在线听书为可选联网功能。支持无 DRM 的 EPUB、MOBI/KF8、文本型 PDF 和 TXT，并提供高亮、笔记、书签、自动滚动与听书等完整阅读能力。
 
 作者：Xiaoyao.Hao
 
@@ -171,6 +175,14 @@ Readex 采用 PolyForm Noncommercial License 1.0.0 进行源码公开。允许�
 - [技术设计](./DESIGN.md)：架构、数据契约、内部逻辑、性能优化、故障排查和维护约定。
 - [LINUX DO](https://linux.do/)：友情链接。
 
+
+### 在线书库（0.1.3）
+
+左侧选择“在线书库”，可切换笔趣阁（`www.biquge.tw`）和爱下电子书（`ixdzs8.com`）。支持首页推荐、书名/作者搜索，以及直接粘贴书籍详情、目录或章节链接。点击“加入书库并阅读”后，书籍会进入“全部书籍”。
+
+在线阅读只加载当前章节，支持完整目录直接跳章、上一章/下一章、上一页/下一页、阅读设置、标注及重启后恢复阅读位置。“刷新目录”可以取得新增章节。已打开过的章节缓存在 `data/cache/parsed/<book-id>/online`，断网时仍可阅读缓存；未缓存章节需要联网。
+
+笔趣阁原站搜索有时会返回空结果，此时会明确提示，并在首页推荐中查找匹配项；也可以直接粘贴链接。网站不可用、目录变化或请求超时会显示错误和重试入口。在线书籍暂不支持全书正文搜索、自动滚动和听书。
 
 ### 导入与阅读
 
@@ -212,7 +224,7 @@ data/
     tts/
 ```
 
-核心阅读数据只保存在本机。启用在线听书时，当前朗读句子会发送给 Microsoft Edge 在线语音服务；图书文件、笔记和完整书库不会上传。打包版渲染窗口默认阻止 HTTP、HTTPS 和 WebSocket 请求，网络访问仅由主进程听书服务完成。
+核心阅读数据只保存在本机。启用在线听书时，当前朗读句子会发送给 Microsoft Edge 在线语音服务；图书文件、笔记和完整书库不会上传。打包版渲染窗口默认阻止 HTTP、HTTPS 和 WebSocket 请求，在线书库通过独立的 Chromium 网络会话访问指定书源，并使用系统代理；在线听书由主进程处理。
 
 ## 打包
 

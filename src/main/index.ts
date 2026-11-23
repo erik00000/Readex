@@ -18,6 +18,7 @@ import type {
   FloatingReaderSync,
   ImportBatchResult,
   ReadingLocator,
+  OnlineSourceId,
   SearchResult
 } from '../shared/types'
 import { upgradeLegacyThemeColors } from '../shared/types'
@@ -27,9 +28,12 @@ import { AnnotationIndex } from './annotationIndex'
 import { registerBookProtocol, registerBookScheme } from './bookProtocol'
 import { SpeechSynthesisService } from './speech'
 import { ReadexStorage } from './storage'
+import { OnlineLibrary } from './online'
+import { fetchOnlineHtml } from './onlineTransport'
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
 const storage = new ReadexStorage()
+const onlineLibrary = new OnlineLibrary(storage, fetchOnlineHtml)
 const annotationIndex = new AnnotationIndex(storage)
 const speechSynthesis = new SpeechSynthesisService(storage)
 let mainWindow: BrowserWindow | null = null
@@ -326,6 +330,18 @@ function restoreMainWindow(): void {
 }
 
 function registerIpc(): void {
+  const onlineHandler = (handler: (...args: any[]) => unknown) =>
+    (event: Electron.IpcMainInvokeEvent, ...args: any[]): unknown => {
+      if (![mainWindow?.webContents.id, floatingWindow?.webContents.id].includes(event.sender.id) || event.senderFrame !== event.sender.mainFrame) {
+        throw new Error('拒绝来自未知页面的在线阅读请求')
+      }
+      return handler(...args)
+    }
+  ipcMain.handle('online:discover', onlineHandler((source: OnlineSourceId, query: string) => onlineLibrary.discover(source, query)))
+  ipcMain.handle('online:add', onlineHandler((url: string) => onlineLibrary.add(url)))
+  ipcMain.handle('online:catalog', onlineHandler((bookId: string, refresh: boolean) => onlineLibrary.getCatalog(bookId, refresh)))
+  ipcMain.handle('online:chapter', onlineHandler((bookId: string, chapterId: string) => onlineLibrary.chapter(bookId, chapterId)))
+
   ipcMain.handle('library:list', () => storage.getLibrary())
   ipcMain.handle('library:choose-import', async (): Promise<ImportBatchResult | null> => {
     if (!mainWindow) return null
@@ -351,6 +367,7 @@ function registerIpc(): void {
   ipcMain.handle('library:reveal', async (_, bookId: string) => {
     const book = await storage.getBookRecord(bookId)
     if (!book) return
+    if (book.online) { await shell.openExternal(book.online.url); return }
     shell.showItemInFolder(storage.getBookSourcePath(book))
   })
 
@@ -580,9 +597,11 @@ app.whenReady().then(async () => {
     const allowedPrefixes = ['file:', 'devtools:', 'blob:', 'data:']
     app.on('web-contents-created', (_, contents) => {
       contents.setWindowOpenHandler(() => ({ action: 'deny' }))
-      contents.on('will-navigate', (event, url) => {
-        if (!allowedPrefixes.some((prefix) => url.startsWith(prefix))) event.preventDefault()
-      })
+      if (contents.session === session.defaultSession) {
+        contents.on('will-navigate', (event, url) => {
+          if (!allowedPrefixes.some((prefix) => url.startsWith(prefix))) event.preventDefault()
+        })
+      }
     })
   }
 
@@ -595,6 +614,22 @@ app.whenReady().then(async () => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) void createWindow()
   })
+})
+
+let writesDrainedForQuit = false
+app.on('will-quit', (event) => {
+  if (writesDrainedForQuit) return
+  event.preventDefault()
+  // Allow IPC messages sent by beforeunload to reach their handlers, then drain
+  // the tracked atomic writes before Electron terminates the process.
+  setTimeout(() => {
+    void storage.flushPendingWrites().catch((error) => {
+      console.error('Unable to flush reading data before quit', error)
+    }).finally(() => {
+      writesDrainedForQuit = true
+      app.quit()
+    })
+  }, 50)
 })
 
 app.on('before-quit', () => {

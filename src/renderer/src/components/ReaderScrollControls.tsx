@@ -49,6 +49,7 @@ interface ReaderScrollControlsProps {
   onTtsSettingsChange: (
     patch: Partial<Pick<ReaderSettings, 'ttsVoice' | 'ttsRate' | 'ttsVolume'>>
   ) => void
+  showAutoScroll?: boolean
   showSpeech?: boolean
   floating?: boolean
   onExitFloating?: () => void
@@ -70,6 +71,7 @@ export function ReaderScrollControls({
   onToggleSpeech,
   onStopSpeech,
   onTtsSettingsChange,
+  showAutoScroll = true,
   showSpeech = true,
   floating = false,
   onExitFloating
@@ -108,7 +110,7 @@ export function ReaderScrollControls({
     const root = rootRef.current
     const speedButton = speedButtonRef.current
     const speechButton = speechButtonRef.current
-    if (!root || !speedButton) return
+    if (!root) return
     const onWheel = (event: WheelEvent): void => {
       event.preventDefault()
       event.stopPropagation()
@@ -116,7 +118,7 @@ export function ReaderScrollControls({
         adjustSpeechRate(event.deltaY < 0 ? 0.1 : -0.1)
         return
       }
-      if (!speedButton.contains(event.target as Node)) return
+      if (!speedButton?.contains(event.target as Node)) return
       adjustSpeed(event.deltaY < 0 ? AUTO_SCROLL_SPEED_STEP : -AUTO_SCROLL_SPEED_STEP)
     }
     root.addEventListener('wheel', onWheel, { passive: false })
@@ -242,7 +244,7 @@ export function ReaderScrollControls({
             <span />
           </>
         )}
-        <div
+        {showAutoScroll && <div
           className="auto-scroll-control"
           onContextMenu={(event) => {
             event.preventDefault()
@@ -289,7 +291,7 @@ export function ReaderScrollControls({
           >
             {speedLabel}
           </button>
-        </div>
+        </div>}
         <span />
         <button
           type="button"

@@ -64,6 +64,7 @@ export function InfoDialog({ mode, version, onClose }: InfoDialogProps): React.J
             <p>Readex 使用以下开源组件构建：</p>
             <ul>
               <li>Electron - MIT</li>
+              <li>Cheerio - MIT</li>
               <li>React - MIT</li>
               <li>epub.js - BSD-2-Clause</li>
               <li>PDF.js - Apache-2.0</li>
@@ -82,11 +83,11 @@ export function InfoDialog({ mode, version, onClose }: InfoDialogProps): React.J
               <img src={logoUrl} alt="" />
             </span>
             <h3>Readex {version}</h3>
-            <p>一个安静、私密、可随身携带的本地电子书阅读器。</p>
+            <p>支持本地电子书与在线书库的便携阅读器。</p>
             <p className="about-author">作者：Xiaoyao.Hao</p>
             <div className="about-points">
               <span>
-                <ShieldCheck size={15} /> 不登录，不上传，不接入云端
+                <ShieldCheck size={15} /> 阅读进度保存在本机，在线阅读仅连接所选书源
               </span>
               <span>
                 <BookOpen size={15} /> EPUB / MOBI / PDF / TXT

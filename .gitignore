@@ -9,3 +9,8 @@ coverage/
 *.log
 *.tsbuildinfo
 .DS_Store
+
+# Local verification and deployment staging
+/verification/
+/app-asar-stage-*/
+/app-*.asar*

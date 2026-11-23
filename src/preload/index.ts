@@ -3,6 +3,7 @@ import { getBookResourceUrl } from '../shared/bookResource'
 import type { TtsSynthesisRequest } from '../shared/speech'
 import type {
   BookFormat,
+  OnlineSourceId,
   FloatingReaderSync,
   ImportProgressEvent,
   ReadingLocator,
@@ -10,6 +11,12 @@ import type {
 } from '../shared/types'
 
 const api = {
+  online: {
+    discover: (source: OnlineSourceId, query: string) => ipcRenderer.invoke('online:discover', source, query),
+    add: (url: string) => ipcRenderer.invoke('online:add', url),
+    catalog: (bookId: string, refresh = false) => ipcRenderer.invoke('online:catalog', bookId, refresh),
+    chapter: (bookId: string, chapterId: string) => ipcRenderer.invoke('online:chapter', bookId, chapterId)
+  },
   library: {
     list: () => ipcRenderer.invoke('library:list'),
     chooseAndImport: () => ipcRenderer.invoke('library:choose-import'),

@@ -53,7 +53,7 @@ export async function searchBookContent(
   const normalized = query.trim().toLocaleLowerCase()
   if (normalized.length < 1) return []
 
-  if (book.format === 'epub' || book.format === 'pdf') return []
+  if (book.online || book.format === 'epub' || book.format === 'pdf') return []
   const content = await getBookContent(storage, book)
   if (!content) return []
 

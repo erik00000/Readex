@@ -104,6 +104,7 @@ export class ReadexStorage {
   private paths = getDataPaths()
   private libraryWrite = Promise.resolve()
   private settingsWrite = Promise.resolve()
+  private readingWrites = new Map<string, Promise<void>>()
 
   async initialize(): Promise<void> {
     this.paths = await ensureDataDirectories()
@@ -270,16 +271,28 @@ export class ReadexStorage {
   }
 
   async saveReadingState(bookId: string, locator: ReadingLocator, progress: number): Promise<void> {
-    await writeJsonAtomic(path.join(this.getBookDirectory(bookId), 'reading-state.json'), {
+    const state: ReadingState = {
       schemaVersion: 1,
-      locator,
+      locator: structuredClone(locator),
       progress: Math.max(0, Math.min(1, progress)),
       updatedAt: new Date().toISOString()
-    } satisfies ReadingState)
-    await this.updateBook(bookId, {
-      lastLocation: locator,
-      progress: Math.max(0, Math.min(1, progress))
+    }
+    // Renderer unload handlers can flush the same book in the same millisecond.
+    // Serialize them to avoid temporary-file collisions and stale writes winning.
+    const previous = this.readingWrites.get(bookId) ?? Promise.resolve()
+    const write = previous.catch(() => undefined).then(async () => {
+      await writeJsonAtomic(path.join(this.getBookDirectory(bookId), 'reading-state.json'), state)
+      await this.updateBook(bookId, { lastLocation: state.locator!, progress: state.progress })
     })
+    this.readingWrites.set(bookId, write)
+    try { await write } finally {
+      if (this.readingWrites.get(bookId) === write) this.readingWrites.delete(bookId)
+    }
+  }
+
+  async flushPendingWrites(): Promise<void> {
+    while (this.readingWrites.size) await Promise.all([...this.readingWrites.values()])
+    await Promise.all([this.libraryWrite, this.settingsWrite])
   }
 
   async getProfileInfo(): Promise<ProfileInfo> {

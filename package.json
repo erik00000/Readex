@@ -17,7 +17,9 @@
     "dist": "npm run build && electron-builder --win portable",
     "dist:green": "npm run build && electron-builder --win zip",
     "dist:dir": "npm run build && electron-builder --win dir",
-    "dist:signed": "npm run typecheck && node scripts/verify-signing-env.mjs && electron-vite build && electron-builder --win portable zip"
+    "dist:signed": "npm run typecheck && node scripts/verify-signing-env.mjs && electron-vite build && electron-builder --win portable zip",
+    "dist:setup": "npm run build && electron-builder --config packaging/electron-builder.release.cjs --win nsis",
+    "dist:rar": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-rar.ps1"
   },
   "dependencies": {
     "@lingo-reader/mobi-parser": "^0.4.6",

@@ -14,3 +14,6 @@ coverage/
 /verification/
 /app-asar-stage-*/
 /app-*.asar*
+
+# Generated installer file manifest
+/packaging/installed-files.generated.nsh

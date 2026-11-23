@@ -264,3 +264,9 @@ release/Readex-0.1.0.exe
 - 在线听书依赖网络和 Microsoft Edge 在线语音服务。
 
 更完整的实现与维护说明见 [技术设计](./DESIGN.md)。
+
+### Windows 版本发布
+
+GitHub Releases 按版本号提供两种 Windows x64 下载：`Readex-版本号-Setup-x64.exe` 安装版和 `Readex-版本号-Portable-x64.rar` 免安装版。安装版可选择目录，新安装在存在 D 盘时默认使用 `D:\Readex`；免安装版完整解压后运行 `Readex.exe`。两种版本均将书库和阅读记录保存到程序旁的 `data` 文件夹。更新前先退出程序，保留原有 `data`，并建议备份个人资料。
+
+构建安装版运行 `pnpm dist:setup`；随后运行 `pnpm dist:rar` 生成真正的 RAR5 压缩包，需安装 WinRAR 或提供 `Rar.exe` 路径。产物位于 `release/v版本号/`，发布包不包含本地书库、缓存或测试数据。安装版卸载和升级仅清理安装文件，保留个人资料。
